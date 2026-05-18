@@ -30,6 +30,13 @@ Authors@R:
             role = c("ctb", "cph")
         )
     )
+Author: 
+    YuKi [aut, cre],
+    Katalin Csillery [ctb, cph],
+    Louisiane Lemaire [ctb, cph],
+    Olivier Francois [ctb, cph],
+    Michael Blum [ctb, cph]
+Maintainer: YuKi <hmz1969a@gmail.com>
 Description: Provides a compact C++ backend for Approximate Bayesian
     Computation with a thin R frontend. The public R interface is intentionally
     small and centers on abc() and summary() methods, while the computational
@@ -49,5 +56,4 @@ SystemRequirements: C++17
 RoxygenNote: 7.3.3
 Suggests:
     abc,
-    covr,
     testthat
