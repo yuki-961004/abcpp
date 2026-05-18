@@ -1,0 +1,230 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  cpp:
+    name: C++
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Check R installed C++ headers
+        run: |
+          python tools/sync_cpp_sources.py --check
+
+      - name: Install coverage tools
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install gcovr
+
+      - name: Configure
+        run: |
+          cmake -S . -B build -DABCPP_BUILD_TESTS=ON \
+            -DABCPP_BUILD_PYTHON=OFF \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_CXX_FLAGS="--coverage -O0 -g" \
+            -DCMAKE_EXE_LINKER_FLAGS="--coverage"
+
+      - name: Build
+        run: |
+          cmake --build build --config Debug
+
+      - name: Test
+        run: |
+          ctest --test-dir build -C Debug --output-on-failure
+
+      - name: Generate C++ coverage
+        run: |
+          gcovr -r . --xml-pretty -o coverage-cpp.xml \
+            --filter Cpp/src --filter Cpp/include
+
+      - name: Check Codecov token
+        if: github.event_name == 'push'
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        run: |
+          if [ -z "$CODECOV_TOKEN" ]; then
+            echo "::error::CODECOV_TOKEN is not available."
+            exit 1
+          fi
+
+      - name: Upload C++ coverage
+        # GitHub does not expose repository secrets to fork pull requests.
+        # Coverage uploads are therefore limited to push events.
+        if: github.event_name == 'push'
+        uses: codecov/codecov-action@v5
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        with:
+          files: ./coverage-cpp.xml
+          disable_search: true
+          flags: cpp
+          name: C++
+          plugins: noop
+          slug: yuki-961004/abcpp
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
+          verbose: true
+
+  r:
+    name: R
+    runs-on: ubuntu-latest
+    env:
+      R_KEEP_PKG_SOURCE: yes
+      R_LIBS_USER: ${{ github.workspace }}/.r-lib
+      _R_CHECK_FORCE_SUGGESTS_: "false"
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      - name: Install R dependencies
+        shell: Rscript {0}
+        run: |
+          dir.create(Sys.getenv("R_LIBS_USER"), recursive = TRUE,
+                     showWarnings = FALSE)
+          install.packages(c("Rcpp", "testthat", "covr", "xml2"))
+
+      - name: Optionally install R abc for alignment tests
+        shell: Rscript {0}
+        run: |
+          tryCatch(
+            install.packages("abc"),
+            error = function(error) {
+              message("Skipping optional abc install: ",
+                      conditionMessage(error))
+            }
+          )
+
+      - name: R CMD check package subdirectory
+        run: |
+          R CMD check R --no-manual --no-build-vignettes
+
+      - name: Install R package for root tests
+        run: |
+          R CMD INSTALL R --library="${R_LIBS_USER}"
+
+      - name: Run package testthat tests
+        shell: Rscript {0}
+        run: |
+          .libPaths(c(Sys.getenv("R_LIBS_USER"), .libPaths()))
+          testthat::test_dir("R/tests/testthat", reporter = "summary")
+
+      - name: Run root testthat tests
+        shell: Rscript {0}
+        run: |
+          .libPaths(c(Sys.getenv("R_LIBS_USER"), .libPaths()))
+          testthat::test_dir("tests/R/testthat", reporter = "summary")
+
+      - name: Generate R coverage
+        shell: Rscript {0}
+        run: |
+          .libPaths(c(Sys.getenv("R_LIBS_USER"), .libPaths()))
+          cov <- covr::package_coverage(
+            path = "R",
+            type = "none",
+            code = ".libPaths(c(Sys.getenv('R_LIBS_USER'), .libPaths()));
+                    testthat::test_dir('R/tests/testthat',
+                                       reporter = 'summary');
+                    testthat::test_dir('tests/R/testthat',
+                                       reporter = 'summary')",
+            quiet = FALSE,
+            clean = FALSE,
+            install_path = file.path(Sys.getenv("RUNNER_TEMP"), "r-cov-lib")
+          )
+          covr::to_cobertura(cov, filename = "coverage-r.xml")
+
+      - name: Check Codecov token
+        if: github.event_name == 'push'
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        run: |
+          if [ -z "$CODECOV_TOKEN" ]; then
+            echo "::error::CODECOV_TOKEN is not available."
+            exit 1
+          fi
+
+      - name: Upload R coverage
+        # GitHub does not expose repository secrets to fork pull requests.
+        # Coverage uploads are therefore limited to push events.
+        if: github.event_name == 'push'
+        uses: codecov/codecov-action@v5
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        with:
+          files: ./coverage-r.xml
+          disable_search: true
+          flags: r
+          name: R
+          plugins: noop
+          slug: yuki-961004/abcpp
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
+          verbose: true
+
+  python:
+    name: Python
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install numpy pytest pytest-cov scikit-build-core pybind11
+
+      - name: Install Python frontend
+        run: |
+          python -m pip install -e ./Python --no-build-isolation
+
+      - name: Run pytest
+        run: |
+          python -m pytest tests/Python --cov=abcpp \
+            --cov-report=term-missing --cov-report=xml
+
+      - name: Check Codecov token
+        if: github.event_name == 'push'
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        run: |
+          if [ -z "$CODECOV_TOKEN" ]; then
+            echo "::error::CODECOV_TOKEN is not available."
+            exit 1
+          fi
+
+      - name: Upload coverage
+        # GitHub does not expose repository secrets to fork pull requests.
+        # Coverage uploads are therefore limited to push events.
+        if: github.event_name == 'push'
+        uses: codecov/codecov-action@v5
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        with:
+          files: ./coverage.xml
+          disable_search: true
+          flags: python
+          name: Python
+          plugins: noop
+          slug: yuki-961004/abcpp
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
+          verbose: true

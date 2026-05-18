@@ -1,0 +1,35 @@
+coverage:
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 5%
+      interfaces:
+        target: auto
+        threshold: 5%
+        flags:
+          - r
+          - python
+
+flags:
+  cpp:
+    paths:
+      - Cpp/
+  r:
+    paths:
+      - R/
+  python:
+    paths:
+      - Python/
+
+component_management:
+  individual_components:
+    - component_id: interfaces
+      name: R and Python Interfaces
+      flag_regexes:
+        - r
+        - python
+    - component_id: cpp
+      name: C++ Core
+      flag_regexes:
+        - cpp

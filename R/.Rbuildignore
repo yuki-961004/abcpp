@@ -1,0 +1,4 @@
+^src/.*[.]dll$
+^src/.*[.]o$
+^src/symbols[.]rds$
+^tmp-lib$

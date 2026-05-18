@@ -1,0 +1,56 @@
+Package: abcpp
+Type: Package
+Title: Shared C++ Backend for Approximate Bayesian Computation
+Version: 1.0.0
+Authors@R:
+    c(
+        person(
+            given = "Katalin",
+            family = "Csillery",
+            role = "aut",
+            email = "kati.csillery@gmail.com"
+        ),
+        person(
+            given = "Louisiane",
+            family = "Lemaire",
+            role = "aut"
+        ),
+        person(
+            given = "Olivier",
+            family = "Francois",
+            role = "aut"
+        ),
+        person(
+            given = "Michael",
+            family = "Blum",
+            role = "aut",
+            email = "michael.blum.temp@gmail.com"
+        ),
+        person(given = "YuKi", role = "cre", email = "hmz1969a@gmail.com")
+    )
+Author: Katalin Csillery [aut],
+  Louisiane Lemaire [aut],
+  Olivier Francois [aut],
+  Michael Blum [aut]
+Maintainer: YuKi <hmz1969a@gmail.com>
+Description: Provides a compact C++ backend for Approximate Bayesian
+    Computation with a thin R frontend. The public R interface is intentionally
+    small and centers on abc() and summary() methods, while the computational
+    work is performed by shared C++ code. The package supports rejection ABC,
+    regression-adjustment workflows, and optional PCA or PLS reduction of
+    summary statistics. It is inspired by common ABC workflows and the R abc
+    interface, but is organized as a shared backend rather than a direct
+    user-interface copy of the abc package.
+License: GPL-3
+Encoding: UTF-8
+LazyData: true
+ByteCompile: true
+Depends: R (>= 4.1.0)
+Imports: Rcpp
+LinkingTo: Rcpp
+SystemRequirements: C++17
+RoxygenNote: 7.3.3
+Suggests:
+    abc,
+    covr,
+    testthat

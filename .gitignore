@@ -1,0 +1,16 @@
+.coverage
+coverage.xml
+coverage-*.xml
+*.Rcheck/
+*.tar.gz
+R/tmp-lib/
+R/src/*.dll
+R/src/*.o
+R/src/symbols.rds
+Python/abcpp/__pycache__/
+tests/python/__pycache__/
+.pytest_cache/
+.vscode/
+build/
+cran/build/
+cran/man/.Rhistory

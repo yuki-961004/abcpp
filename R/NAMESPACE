@@ -1,0 +1,4 @@
+useDynLib(abcpp, .registration = TRUE)
+importFrom(Rcpp, evalCpp)
+export(abc)
+S3method(summary, abcpp)

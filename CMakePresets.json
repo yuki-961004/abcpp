@@ -1,0 +1,38 @@
+{
+  "version": 6,
+  "configurePresets": [
+    {
+      "name": "cpp-core-msvc-release",
+      "displayName": "abcpp core - MSVC Release",
+      "description": "Configure the C++ library and tests.",
+      "generator": "Visual Studio 18 2026",
+      "architecture": "x64",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_INSTALL_PREFIX": "${sourceDir}/build/install",
+        "ABCPP_BUILD_TESTS": "ON",
+        "ABCPP_BUILD_PYTHON": "OFF"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "cpp-core-msvc-release",
+      "configurePreset": "cpp-core-msvc-release",
+      "configuration": "Release",
+      "targets": [
+        "abcpp",
+        "abcpp_tests",
+        "abcpp_linkingto_header_tests"
+      ]
+    },
+    {
+      "name": "cpp-core-install-msvc-release",
+      "configurePreset": "cpp-core-msvc-release",
+      "configuration": "Release",
+      "targets": [
+        "install"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+[build-system]
+requires = ["scikit-build-core", "pybind11>=2.10.0", "numpy"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "abcpp"
+version = "1.0.0"
+description = "Thin Python frontend for a shared C++ Approximate Bayesian Computation backend"
+requires-python = ">=3.10"
+dependencies = ["numpy"]
+authors = [
+    {name = "Katalin Csillery", email = "kati.csillery@gmail.com"},
+    {name = "Louisiane Lemaire"},
+    {name = "Olivier Francois"},
+    {name = "Michael Blum", email = "michael.blum.temp@gmail.com"},
+]
+maintainers = [
+    {name = "YuKi", email = "hmz1969a@gmail.com"},
+]
+
+[project.optional-dependencies]
+test = ["pytest", "pytest-cov"]
+
+[tool.scikit-build]
+wheel.packages = ["abcpp"]
+cmake.args = ["-DABCPP_BUILD_TESTS=OFF"]
+cmake.source-dir = "."
+
+[tool.pyright]
+extraPaths = ["."]
