@@ -2,7 +2,7 @@
 # Development Package Setup
 ############################
 
-# 这里优先使用本项目构建出来的本地 R library, 方便开发时直接验证.
+# Developer note.
 local_r_libs <- base::c(
     base::file.path("build", "Rlib45"),
     base::file.path("build", "Rlib")
@@ -12,7 +12,7 @@ if (base::length(local_r_libs) > 0L) {
     base::.libPaths(base::c(local_r_libs, base::.libPaths()))
 }
 
-# 这里封装包检查逻辑, 缺包时给出清楚的信息.
+# Developer note.
 ensure_namespace <- function(package_name) {
     if (!base::requireNamespace(package_name, quietly = TRUE)) {
         base::stop(
@@ -24,7 +24,7 @@ ensure_namespace <- function(package_name) {
     }
 }
 
-# 这里允许开发者未安装 abcpp 时用 devtools 直接加载 R wrapper.
+# Developer note.
 ensure_abcpp <- function() {
     if (base::requireNamespace("abcpp", quietly = TRUE)) {
         return(base::invisible(TRUE))
@@ -44,10 +44,10 @@ ensure_abcpp <- function() {
 ensure_abcpp()
 ensure_namespace("abc")
 
-# 这里加宽控制台表格, 避免最终结果因为列名太长被换行.
+# Developer note.
 base::options(width = base::max(120L, base::getOption("width")))
 
-# 这里允许只运行某些开发验证块, 例如 ABCPP_DEV_SECTIONS=binaryrl.
+# Developer note.
 dev_sections <- base::strsplit(
     x = base::Sys.getenv("ABCPP_DEV_SECTIONS", unset = "all"),
     split = ",",
@@ -64,14 +64,14 @@ run_dev_section <- function(section_name) {
 # Shared Helper Functions
 ############################
 
-# 这里计算矩阵之间的最大绝对差, 用来检查两个后端是否对齐.
+# Developer note.
 max_abs_diff <- function(left, right) {
     left_matrix <- base::as.matrix(left)
     right_matrix <- base::as.matrix(right)
     base::max(base::abs(left_matrix - right_matrix))
 }
 
-# 这里统一提取 posterior mean, regression 方法优先使用调整后的样本.
+# Developer note.
 posterior_mean <- function(fit) {
     has_adjusted <- !base::is.null(fit$adj.values) &&
         base::length(fit$adj.values) > 0L
@@ -85,7 +85,7 @@ posterior_mean <- function(fit) {
     base::colMeans(values)
 }
 
-# 这里复刻 R abc::summary 第 5 行 weighted mode 的参数点估计思路.
+# Developer note.
 posterior_weighted_mode <- function(fit) {
     has_adjusted <- !base::is.null(fit$adj.values) &&
         base::length(fit$adj.values) > 0L
@@ -105,7 +105,7 @@ posterior_weighted_mode <- function(fit) {
         weights <- base::rep(1, base::nrow(values))
     }
 
-    # density() 要求 weights 加和为 1, 零权重时退回到均匀权重.
+    # Developer note.
     if (base::sum(weights) <= 0 || base::any(!base::is.finite(weights))) {
         weights <- base::rep(1, base::nrow(values))
     }
@@ -121,7 +121,7 @@ posterior_weighted_mode <- function(fit) {
     )
 }
 
-# 这里处理空向量均值, 避免极端子集产生 NA.
+# Developer note.
 safe_mean <- function(values) {
     if (base::length(values) == 0L) {
         return(0)
@@ -129,7 +129,7 @@ safe_mean <- function(values) {
     base::mean(values)
 }
 
-# 这里处理长度不足的标准差, 避免单个 trial 产生 NA.
+# Developer note.
 safe_sd <- function(values) {
     if (base::length(values) < 2L) {
         return(0)
@@ -137,7 +137,7 @@ safe_sd <- function(values) {
     stats::sd(values)
 }
 
-# 这里处理相关系数, 防止常数向量让展示结果变成警告流.
+# Developer note.
 safe_cor <- function(left, right) {
     left_sd <- safe_sd(left)
     right_sd <- safe_sd(right)
@@ -156,7 +156,7 @@ safe_cor <- function(left, right) {
 
 if (run_dev_section("minimal")) {
 
-# 这里构造一个小型二维 toy bank, 避免 loclinear 遇到共线设计矩阵.
+# Developer note.
 toy_grid <- base::expand.grid(
     theta_1 = base::seq(from = 0.05, to = 0.95, length.out = 10L),
     theta_2 = base::seq(from = 0.10, to = 0.90, length.out = 9L)
@@ -165,7 +165,7 @@ toy_param <- base::as.matrix(toy_grid)
 toy_theta_1 <- toy_param[, "theta_1"]
 toy_theta_2 <- toy_param[, "theta_2"]
 
-# 这里让 summary statistics 同时包含线性和非线性信息.
+# Developer note.
 toy_sumstat <- base::cbind(
     stat_1 = toy_theta_1 + 0.25 * toy_theta_2,
     stat_2 = toy_theta_1 * toy_theta_1 - 0.10 * toy_theta_2,
@@ -184,7 +184,7 @@ toy_target <- base::c(
         base::cos(base::pi * toy_target_param["theta_2"])
 )
 
-# 这里先检查 rejection, 因为它最直接反映距离和 tol 选择是否一致.
+# Developer note.
 toy_r_rejection <- abc::abc(
     target = toy_target,
     param = toy_param,
@@ -199,10 +199,10 @@ toy_cpp_rejection <- abcpp::abc(
     tol = 0.10,
     method = "rejection",
     transf = base::rep("none", 2L),
-    reduce = "none"
+    reduction = "none"
 )
 
-# 这里再检查 loclinear, 它是后验调整最重要的确定性路径.
+# Developer note.
 toy_r_loclinear <- base::suppressWarnings(abc::abc(
     target = toy_target,
     param = toy_param,
@@ -220,7 +220,7 @@ toy_cpp_loclinear <- abcpp::abc(
     method = "loclinear",
     hcorr = FALSE,
     transf = base::rep("none", 2L),
-    reduce = "none"
+    reduction = "none"
 )
 
 toy_r_ridge <- base::suppressWarnings(abc::abc(
@@ -242,7 +242,7 @@ toy_cpp_ridge <- abcpp::abc(
     hcorr = FALSE,
     transf = base::rep("none", 2L),
     lambda = base::c(0.001, 0.01),
-    reduce = "none"
+    reduction = "none"
 )
 toy_target_matrix <- base::matrix(toy_target, nrow = 2L, byrow = TRUE)
 toy_sumstat_matrices <- base::lapply(
@@ -258,7 +258,7 @@ toy_cpp_matrix_list <- abcpp::abc(
     tol = 0.10,
     method = "rejection",
     transf = base::rep("none", 2L),
-    reduce = "none"
+    reduction = "none"
 )
 
 toy_alignment <- base::data.frame(
@@ -308,7 +308,7 @@ base::print(toy_alignment, row.names = FALSE)
 base::cat("\n=== Minimal Posterior Means ===\n")
 base::print(toy_means)
 
-# 这里清理中间对象, 让控制台只留下最终结果.
+# Developer note.
 base::rm(
     toy_theta_1,
     toy_theta_2,
@@ -339,7 +339,7 @@ base::rm(
 
 if (run_dev_section("sdt")) {
 
-# 这里把真实被试数据压缩成一组 matrix-like 的 SDT 摘要统计量.
+# Developer note.
 sdt_summary <- function(stim, resp, conf) {
     signal <- stim == 1L
     noise <- stim == 0L
@@ -354,7 +354,7 @@ sdt_summary <- function(stim, resp, conf) {
         error_high_conf = safe_mean(conf[!correct] >= 3L)
     )
 
-    # 这里保留置信度分布, 但省略最后一档以避免线性冗余.
+    # Developer note.
     for (stim_level in base::c(0L, 1L)) {
         stim_mask <- stim == stim_level
         for (conf_level in base::seq_len(3L)) {
@@ -371,7 +371,7 @@ sdt_summary <- function(stim, resp, conf) {
     out
 }
 
-# 这里用最简单的 equal-variance SDT 生成 response 和 confidence.
+# Developer note.
 simulate_sdt <- function(stim, d_value, criterion) {
     evidence_mean <- base::ifelse(stim == 1L, d_value, 0)
     evidence <- stats::rnorm(
@@ -386,7 +386,7 @@ simulate_sdt <- function(stim, d_value, criterion) {
     base::list(resp = resp, conf = conf)
 }
 
-# 这里生成 ABC bank, 每一行都是一组参数和对应的摘要统计量.
+# Developer note.
 make_sdt_abc_bank <- function(stim, n_sims, target_names) {
     param <- base::matrix(NA_real_, nrow = n_sims, ncol = 2L)
     sumstat <- base::matrix(
@@ -398,7 +398,7 @@ make_sdt_abc_bank <- function(stim, n_sims, target_names) {
     base::colnames(sumstat) <- target_names
 
     for (index in base::seq_len(n_sims)) {
-        # 每次循环抽一组参数, 这样 ABC bank 覆盖合理的 SDT 参数空间.
+        # Developer note.
         d_value <- stats::runif(n = 1L, min = 0.2, max = 3.5)
         criterion <- stats::runif(n = 1L, min = -1.5, max = 2.5)
         param[index, ] <- base::c(d_value, criterion)
@@ -418,7 +418,7 @@ make_sdt_abc_bank <- function(stim, n_sims, target_names) {
     base::list(param = param, sumstat = sumstat)
 }
 
-# 这里从 exp1.csv 读取一个被试, 保持 dev script 的输入固定.
+# Developer note.
 read_sdt_subject <- function(path, subject_id) {
     data <- utils::read.csv(path)
     data <- data[data$subj_id == subject_id, , drop = FALSE]
@@ -462,7 +462,7 @@ sdt_cpp_rejection <- abcpp::abc(
     tol = 0.12,
     method = "rejection",
     transf = base::rep("none", 2L),
-    reduce = "none"
+    reduction = "none"
 )
 
 sdt_r_loclinear <- base::suppressWarnings(abc::abc(
@@ -482,7 +482,7 @@ sdt_cpp_loclinear <- abcpp::abc(
     method = "loclinear",
     hcorr = FALSE,
     transf = base::rep("none", 2L),
-    reduce = "none"
+    reduction = "none"
 )
 
 sdt_r_ridge <- base::suppressWarnings(abc::abc(
@@ -504,7 +504,7 @@ sdt_cpp_ridge <- abcpp::abc(
     hcorr = FALSE,
     transf = base::rep("none", 2L),
     lambda = base::c(0.001, 0.01),
-    reduce = "none"
+    reduction = "none"
 )
 
 sdt_cpp_pca <- abcpp::abc(
@@ -515,8 +515,8 @@ sdt_cpp_pca <- abcpp::abc(
     method = "ridge",
     hcorr = FALSE,
     transf = base::rep("none", 2L),
-    reduce = "pca",
-    ncomp = 4L
+    reduction = "pca",
+    n_comp = 4L
 )
 sdt_cpp_pls <- abcpp::abc(
     target = sdt_target,
@@ -526,8 +526,8 @@ sdt_cpp_pls <- abcpp::abc(
     method = "ridge",
     hcorr = FALSE,
     transf = base::rep("none", 2L),
-    reduce = "pls",
-    ncomp = 2L
+    reduction = "pls",
+    n_comp = 2L
 )
 
 sdt_alignment <- base::data.frame(
@@ -568,7 +568,7 @@ sdt_means <- base::rbind(
 )
 
 sdt_reduction <- base::data.frame(
-    reduce = base::c("none", "pca", "pls"),
+    reduction = base::c("none", "pca", "pls"),
     accepted = base::c(
         base::nrow(sdt_cpp_loclinear$unadj.values),
         base::nrow(sdt_cpp_pca$unadj.values),
@@ -588,7 +588,7 @@ base::print(sdt_means)
 base::cat("\n=== SDT Reduction Summary ===\n")
 base::print(sdt_reduction, row.names = FALSE)
 
-# 这里清理 SDT 中间对象, 只保留控制台上的最终结果.
+# Developer note.
 base::rm(
     sdt_data_path,
     sdt_subject,
@@ -616,7 +616,7 @@ base::rm(
 
 if (run_dev_section("binaryrl")) {
 
-# 这里只在 R 端运行 binaryRL, 因为 binaryRL 没有 Python 前端.
+# Developer note.
 if (!base::requireNamespace("binaryRL", quietly = TRUE)) {
     rl_alignment <- base::data.frame(
         status = "skipped",
@@ -626,14 +626,14 @@ if (!base::requireNamespace("binaryRL", quietly = TRUE)) {
     base::print(rl_alignment, row.names = FALSE)
     base::rm(rl_alignment)
 } else {
-    # 这里抽取 binaryRL 模拟时使用的真实参数.
+    # Developer note.
     extract_binaryrl_params <- function(x) {
         param_vector <- base::as.numeric(x$input)
         base::names(param_vector) <- base::c("eta", "tau")
         param_vector
     }
 
-    # 这里复刻 ABC.Rmd 中 block-level risky choice summary 的想法.
+    # Developer note.
     extract_binaryrl_sumstats <- function(x, blocks) {
         data <- x[["data"]]
         data <- data[data$Frame %in% base::c("Gain", "Loss"), , drop = FALSE]
@@ -643,7 +643,7 @@ if (!base::requireNamespace("binaryRL", quietly = TRUE)) {
         out_names <- base::character(base::length(out))
 
         for (index in base::seq_along(blocks)) {
-            # 每个 block 产生 mean 和 sd, 形成高维行为摘要.
+            # Developer note.
             block_value <- blocks[index]
             block_risky <- risky[data$Block == block_value]
             mean_index <- 2L * index - 1L
@@ -673,7 +673,7 @@ if (!base::requireNamespace("binaryRL", quietly = TRUE)) {
     rl_n_valid <- 100L
     rl_n_total <- rl_n_train + rl_n_valid
 
-    # 这里捕获 binaryRL 的进度输出, 避免中间过程刷屏.
+    # Developer note.
     utils::capture.output({
         rl_simulated <- base::suppressWarnings(base::suppressMessages(
             binaryRL::simulate_list(
@@ -745,11 +745,11 @@ if (!base::requireNamespace("binaryRL", quietly = TRUE)) {
     rl_old_warn <- base::getOption("warn")
     base::options(warn = -1L)
 
-    # binaryRL 这里只测试 neuralnet, 对齐 ABC.Rmd 的参数恢复流程.
+    # Developer note.
     for (index in base::seq_len(rl_n_valid)) {
         rl_target <- base::as.numeric(rl_valid_sumstats[index, ])
         if (rl_run_neuralnet) {
-            # 每个 validation target 使用固定 seed, 让 R neuralnet 可重复.
+            # Developer note.
             base::set.seed(2000L + index)
             utils::capture.output({
                 rl_r_neuralnet_fit <- abc::abc(
@@ -789,7 +789,7 @@ if (!base::requireNamespace("binaryRL", quietly = TRUE)) {
                 trace = FALSE,
                 maxit = 500L,
                 seed = 2000L + index,
-                reduce = "none"
+                reduction = "none"
             )
 
             rl_pred_r_neuralnet[index, ] <- posterior_weighted_mode(
@@ -853,7 +853,7 @@ if (!base::requireNamespace("binaryRL", quietly = TRUE)) {
         )
     }
 
-    # 这里清理 binaryRL 中间对象, 保持 dev 控制台只看最终结果.
+    # Developer note.
     base::rm(list = base::intersect(
         x = base::ls(),
         y = base::c(
@@ -885,5 +885,5 @@ if (!base::requireNamespace("binaryRL", quietly = TRUE)) {
 
 }
 
-# 这里触发一次垃圾回收, 手动运行大模拟后释放内存.
+# Developer note.
 base::invisible(base::gc())

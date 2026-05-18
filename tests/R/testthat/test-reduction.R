@@ -1,4 +1,4 @@
-testthat::test_that("reduce none leaves summary dimension unchanged", {
+testthat::test_that("reduction none leaves summary dimension unchanged", {
   data <- abcpp_test_data()
 
   result <- abcpp::abc(
@@ -9,7 +9,7 @@ testthat::test_that("reduce none leaves summary dimension unchanged", {
     method = "loclinear",
     hcorr = FALSE,
     transf = base::rep("none", 2L),
-    reduce = "none"
+    reduction = "none"
   )
 
   testthat::expect_equal(result$numstat, base::ncol(data$sumstat))
@@ -27,8 +27,8 @@ testthat::test_that("PCA reduction returns requested dimension", {
     method = "ridge",
     hcorr = FALSE,
     transf = base::rep("none", 2L),
-    reduce = "pca",
-    ncomp = 2L
+    reduction = "pca",
+    n_comp = 2L
   )
 
   testthat::expect_equal(result$numstat, 2L)
@@ -48,7 +48,7 @@ testthat::test_that("PLS reduction returns requested dimension", {
     hcorr = FALSE,
     transf = base::rep("none", 2L),
     reduction = "pls",
-    ncomp = 2L
+    n_comp = 2L
   )
 
   testthat::expect_equal(result$numstat, 2L)

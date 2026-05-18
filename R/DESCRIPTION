@@ -5,34 +5,31 @@ Version: 1.0.0
 Authors@R:
     c(
         person(
+            given = "YuKi",
+            role = c("aut", "cre"),
+            email = "hmz1969a@gmail.com"
+        ),
+        person(
             given = "Katalin",
             family = "Csillery",
-            role = "aut",
-            email = "kati.csillery@gmail.com"
+            role = c("ctb", "cph")
         ),
         person(
             given = "Louisiane",
             family = "Lemaire",
-            role = "aut"
+            role = c("ctb", "cph")
         ),
         person(
             given = "Olivier",
             family = "Francois",
-            role = "aut"
+            role = c("ctb", "cph")
         ),
         person(
             given = "Michael",
             family = "Blum",
-            role = "aut",
-            email = "michael.blum.temp@gmail.com"
-        ),
-        person(given = "YuKi", role = "cre", email = "hmz1969a@gmail.com")
+            role = c("ctb", "cph")
+        )
     )
-Author: Katalin Csillery [aut],
-  Louisiane Lemaire [aut],
-  Olivier Francois [aut],
-  Michael Blum [aut]
-Maintainer: YuKi <hmz1969a@gmail.com>
 Description: Provides a compact C++ backend for Approximate Bayesian
     Computation with a thin R frontend. The public R interface is intentionally
     small and centers on abc() and summary() methods, while the computational

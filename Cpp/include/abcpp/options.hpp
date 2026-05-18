@@ -40,7 +40,7 @@ enum class ReductionMethod {
 
 struct ReductionOptions {
     ReductionMethod method = ReductionMethod::None;
-    std::size_t ncomp = 0;
+    std::size_t n_comp = 0;
 };
 
 struct AbcOptions {

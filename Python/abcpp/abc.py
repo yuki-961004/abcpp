@@ -26,8 +26,6 @@ def abc(
     lambda_values=None,
     maxit=500,
     reduction=None,
-    reduce=None,
-    ncomp=None,
     n_comp=None,
     seed=1004,
 ):
@@ -74,14 +72,10 @@ def abc(
         lambda_values = numpy.asarray([0.0001, 0.001, 0.01], dtype=float)
     if isinstance(transf, str):
         transf = [transf]
-    if reduction is None and reduce is not None:
-        reduction = reduce
     if reduction is None:
         reduction = "none"
-    if ncomp is None and n_comp is not None:
-        ncomp = n_comp
-    if ncomp is None:
-        ncomp = 0
+    if n_comp is None:
+        n_comp = 0
 
     common_args = dict(
         target=target_array,
@@ -98,7 +92,7 @@ def abc(
         lambda_values=numpy.asarray(lambda_values, dtype=float),
         maxit=int(maxit),
         reduction=str(reduction),
-        ncomp=int(ncomp),
+        n_comp=int(n_comp),
         seed=int(seed),
     )
 

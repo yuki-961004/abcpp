@@ -13,14 +13,14 @@ def test_reduction_none_keeps_original_dimension(toy_data):
         method="loclinear",
         hcorr=False,
         transf=["none", "none"],
-        reduce="none",
+        reduction="none",
     )
 
     assert result["numstat"] == toy_data["sumstat"].shape[1]
     assert result["reduction"]["method"] == "none"
 
 
-def test_reduction_none_and_reduce_none_are_equivalent(toy_data):
+def test_default_reduction_is_none(toy_data):
     result_default = abcpp.abc(
         target=toy_data["target"],
         param=toy_data["param"],
@@ -34,7 +34,7 @@ def test_reduction_none_and_reduce_none_are_equivalent(toy_data):
         sumstat=toy_data["sumstat"],
         tol=0.20,
         method="rejection",
-        reduce="none",
+        reduction="none",
     )
 
     assert result_default["numstat"] == result_alias["numstat"]
@@ -51,8 +51,8 @@ def test_pca_reduction_returns_requested_dimension(toy_data):
         method="ridge",
         hcorr=False,
         transf=["none", "none"],
-        reduce="pca",
-        ncomp=2,
+        reduction="pca",
+        n_comp=2,
     )
 
     assert result["numstat"] == 2
@@ -71,7 +71,7 @@ def test_pls_reduction_returns_requested_dimension(toy_data):
         hcorr=False,
         transf=["none", "none"],
         reduction="pls",
-        ncomp=2,
+        n_comp=2,
     )
 
     assert result["numstat"] == 2

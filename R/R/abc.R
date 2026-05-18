@@ -15,8 +15,6 @@ abc <- function(
     trace = FALSE,
     maxit = 500L,
     reduction = NULL,
-    reduce = NULL,
-    ncomp = NULL,
     n_comp = NULL,
     seed = 1004L,
     ...
@@ -58,21 +56,15 @@ abc <- function(
         base::as.logical(subset)
     }
 
-    if (base::is.null(reduction) && !base::is.null(reduce)) {
-        reduction <- reduce
-    }
     reduction_value <- if (base::is.null(reduction)) {
         "none"
     } else {
         base::as.character(reduction)[1L]
     }
-    if (base::is.null(ncomp) && !base::is.null(n_comp)) {
-        ncomp <- n_comp
-    }
-    ncomp_value <- if (base::is.null(ncomp)) {
+    n_comp_value <- if (base::is.null(n_comp)) {
         0L
     } else {
-        base::as.integer(ncomp)[1L]
+        base::as.integer(n_comp)[1L]
     }
 
     call_name <- if (sumstat_is_list) {
@@ -99,7 +91,7 @@ abc <- function(
         base::as.integer(maxit)[1L],
         base::as.integer(seed)[1L],
         reduction_value,
-        ncomp_value
+        n_comp_value
     )
 
     param_names <- base::colnames(param_matrix)

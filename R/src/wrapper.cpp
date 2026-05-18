@@ -115,7 +115,7 @@ abcpp::AbcOptions make_options(
     SEXP maxit_sexp,
     SEXP seed_sexp,
     SEXP reduction_sexp,
-    SEXP ncomp_sexp
+    SEXP n_comp_sexp
 ) {
     const Rcpp::NumericMatrix logit_bounds(logit_bounds_sexp);
     const Rcpp::LogicalVector subset(subset_sexp);
@@ -139,8 +139,8 @@ abcpp::AbcOptions make_options(
     options.reduction.method = abcpp::parse_reduction(
         Rcpp::as<std::string>(reduction_sexp)
     );
-    options.reduction.ncomp = static_cast<std::size_t>(
-        Rcpp::as<int>(ncomp_sexp)
+    options.reduction.n_comp = static_cast<std::size_t>(
+        Rcpp::as<int>(n_comp_sexp)
     );
     return options;
 }
@@ -148,7 +148,7 @@ abcpp::AbcOptions make_options(
 SEXP result_to_r(const abcpp::AbcResult& result) {
     Rcpp::List reduction_info = Rcpp::List::create(
         Rcpp::Named("method") = abcpp::reduction_name(result.reduction.method),
-        Rcpp::Named("ncomp") = static_cast<int>(result.reduction.ncomp),
+        Rcpp::Named("n_comp") = static_cast<int>(result.reduction.n_comp),
         Rcpp::Named("rotation") = cpp_matrix_to_r(result.reduction.rotation),
         Rcpp::Named("center") = result.reduction.center
     );
@@ -220,7 +220,7 @@ extern "C" SEXP _abcpp_abc(
     SEXP maxit_sexp,
     SEXP seed_sexp,
     SEXP reduction_sexp,
-    SEXP ncomp_sexp
+    SEXP n_comp_sexp
 ) {
     BEGIN_RCPP
 
@@ -241,7 +241,7 @@ extern "C" SEXP _abcpp_abc(
         maxit_sexp,
         seed_sexp,
         reduction_sexp,
-        ncomp_sexp
+        n_comp_sexp
     );
 
     const abcpp::AbcResult result = abcpp::abc(
@@ -273,7 +273,7 @@ extern "C" SEXP _abcpp_abc_matrix_list(
     SEXP maxit_sexp,
     SEXP seed_sexp,
     SEXP reduction_sexp,
-    SEXP ncomp_sexp
+    SEXP n_comp_sexp
 ) {
     BEGIN_RCPP
 
@@ -294,7 +294,7 @@ extern "C" SEXP _abcpp_abc_matrix_list(
         maxit_sexp,
         seed_sexp,
         reduction_sexp,
-        ncomp_sexp
+        n_comp_sexp
     );
 
     const abcpp::AbcResult result = abcpp::abc(

@@ -118,7 +118,7 @@ py::list transforms_to_python(
 py::dict result_to_python(const abcpp::AbcResult& result) {
     py::dict reduction;
     reduction["method"] = abcpp::reduction_name(result.reduction.method);
-    reduction["ncomp"] = result.reduction.ncomp;
+    reduction["n_comp"] = result.reduction.n_comp;
     reduction["rotation"] = matrix_to_numpy(result.reduction.rotation);
     reduction["center"] = result.reduction.center;
 
@@ -231,7 +231,7 @@ PYBIND11_MODULE(_core, m) {
                 lambda_values,
             int maxit,
             const std::string& reduction,
-            int ncomp,
+            int n_comp,
             int seed
         ) {
             abcpp::AbcOptions options;
@@ -247,7 +247,7 @@ PYBIND11_MODULE(_core, m) {
             options.lambda = numpy_to_vector(lambda_values);
             options.maxit = maxit;
             options.reduction.method = abcpp::parse_reduction(reduction);
-            options.reduction.ncomp = static_cast<std::size_t>(ncomp);
+            options.reduction.n_comp = static_cast<std::size_t>(n_comp);
             options.seed = static_cast<unsigned int>(seed);
 
             const abcpp::AbcResult result = abcpp::abc(
@@ -273,7 +273,7 @@ PYBIND11_MODULE(_core, m) {
         py::arg("lambda_values"),
         py::arg("maxit"),
         py::arg("reduction"),
-        py::arg("ncomp"),
+        py::arg("n_comp"),
         py::arg("seed")
     );
 
@@ -300,7 +300,7 @@ PYBIND11_MODULE(_core, m) {
                 lambda_values,
             int maxit,
             const std::string& reduction,
-            int ncomp,
+            int n_comp,
             int seed
         ) {
             abcpp::AbcOptions options;
@@ -316,7 +316,7 @@ PYBIND11_MODULE(_core, m) {
             options.lambda = numpy_to_vector(lambda_values);
             options.maxit = maxit;
             options.reduction.method = abcpp::parse_reduction(reduction);
-            options.reduction.ncomp = static_cast<std::size_t>(ncomp);
+            options.reduction.n_comp = static_cast<std::size_t>(n_comp);
             options.seed = static_cast<unsigned int>(seed);
 
             const abcpp::AbcResult result = abcpp::abc(
@@ -342,7 +342,7 @@ PYBIND11_MODULE(_core, m) {
         py::arg("lambda_values"),
         py::arg("maxit"),
         py::arg("reduction"),
-        py::arg("ncomp"),
+        py::arg("n_comp"),
         py::arg("seed")
     );
 

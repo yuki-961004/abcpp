@@ -10,7 +10,7 @@ namespace abcpp {
 
 struct ReductionInfo {
     ReductionMethod method = ReductionMethod::None;
-    std::size_t ncomp = 0;
+    std::size_t n_comp = 0;
     Matrix rotation;
     std::vector<double> center;
 };

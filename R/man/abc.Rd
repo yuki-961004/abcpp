@@ -12,8 +12,7 @@ abc(target, param, sumstat, tol, method, hcorr = TRUE,
     transf = "none", logit.bounds = NULL, subset = NULL,
     kernel = "epanechnikov", numnet = 10L, sizenet = 5L,
     lambda = base::c(0.0001, 0.001, 0.01), trace = FALSE,
-    maxit = 500L, reduction = NULL, reduce = NULL,
-    ncomp = NULL, n_comp = NULL, seed = 1004L, ...)
+    maxit = 500L, reduction = NULL, n_comp = NULL, seed = 1004L, ...)
 }
 \arguments{
 \item{target}{
@@ -86,14 +85,12 @@ not print neural optimizer traces.
 Maximum number of iterations for neural adjustment controls. This argument is
 kept for API compatibility.
 }
-\item{reduction, reduce}{
+\item{reduction}{
 Optional summary statistic reduction method. Possible values are
-\code{NULL}, \code{"none"}, \code{"pca"}, and \code{"pls"}. \code{reduce} is
-a short alias for \code{reduction}.
+\code{NULL}, \code{"none"}, \code{"pca"}, and \code{"pls"}.
 }
-\item{ncomp, n_comp}{
-Number of PCA or PLS components. \code{n_comp} is accepted as an alias for
-\code{ncomp}. If omitted, a conservative default is used.
+\item{n_comp}{
+Number of PCA or PLS components. If omitted, a conservative default is used.
 }
 \item{seed}{
 Integer seed used by stochastic C++ components.

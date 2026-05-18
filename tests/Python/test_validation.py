@@ -43,7 +43,7 @@ def test_invalid_reduction_raises(toy_data):
             sumstat=toy_data["sumstat"],
             tol=0.10,
             method="rejection",
-            reduce="bad_reduction",
+            reduction="bad_reduction",
         )
 
 
@@ -84,7 +84,7 @@ def test_matrix_target_and_stacked_summary_statistics_work(toy_data):
         method="loclinear",
         hcorr=False,
         reduction="pls",
-        ncomp=1,
+        n_comp=1,
     )
 
     assert result_pls["numstat"] == 1

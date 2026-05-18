@@ -137,7 +137,7 @@ EigenResult jacobi_eigen(Matrix matrix) {
 
 Matrix select_sorted_components(
     const EigenResult& eigen,
-    std::size_t ncomp
+    std::size_t n_comp
 ) {
     std::vector<std::size_t> order(eigen.values.size(), 0);
     for (std::size_t i = 0; i < order.size(); ++i) {
@@ -152,8 +152,8 @@ Matrix select_sorted_components(
         }
     );
 
-    Matrix components(eigen.vectors.rows(), ncomp, 0.0);
-    for (std::size_t comp = 0; comp < ncomp; ++comp) {
+    Matrix components(eigen.vectors.rows(), n_comp, 0.0);
+    for (std::size_t comp = 0; comp < n_comp; ++comp) {
         for (std::size_t row = 0; row < eigen.vectors.rows(); ++row) {
             components(row, comp) = eigen.vectors(row, order[comp]);
         }
@@ -164,17 +164,17 @@ Matrix select_sorted_components(
 ReducedSummary reduce_pca(
     const Matrix& sumstat,
     const std::vector<double>& target,
-    std::size_t requested_ncomp
+    std::size_t requested_n_comp
 ) {
     Matrix centered = sumstat;
     const std::vector<double> centers = center_columns(centered);
-    const std::size_t ncomp = std::max<std::size_t>(
+    const std::size_t n_comp = std::max<std::size_t>(
         1,
-        std::min(requested_ncomp, sumstat.cols())
+        std::min(requested_n_comp, sumstat.cols())
     );
 
     const EigenResult eigen = jacobi_eigen(covariance_matrix(centered));
-    const Matrix components = select_sorted_components(eigen, ncomp);
+    const Matrix components = select_sorted_components(eigen, n_comp);
     const Matrix scores = multiply(centered, components);
 
     Matrix target_centered(1, target.size(), 0.0);
@@ -183,14 +183,14 @@ ReducedSummary reduce_pca(
     }
 
     const Matrix target_scores = multiply(target_centered, components);
-    std::vector<double> reduced_target(ncomp, 0.0);
-    for (std::size_t col = 0; col < ncomp; ++col) {
+    std::vector<double> reduced_target(n_comp, 0.0);
+    for (std::size_t col = 0; col < n_comp; ++col) {
         reduced_target[col] = target_scores(0, col);
     }
 
     ReductionInfo info;
     info.method = ReductionMethod::PCA;
-    info.ncomp = ncomp;
+    info.n_comp = n_comp;
     info.rotation = components;
     info.center = centers;
 
@@ -201,7 +201,7 @@ ReducedSummary reduce_pls(
     const Matrix& param,
     const Matrix& sumstat,
     const std::vector<double>& target,
-    std::size_t requested_ncomp
+    std::size_t requested_n_comp
 ) {
     Matrix x_original = sumstat;
     Matrix x_residual = sumstat;
@@ -216,15 +216,15 @@ ReducedSummary reduce_pls(
     }
 
     const std::size_t max_comp = std::min(sumstat.cols(), sumstat.rows());
-    const std::size_t ncomp = std::max<std::size_t>(
+    const std::size_t n_comp = std::max<std::size_t>(
         1,
-        std::min(requested_ncomp, max_comp)
+        std::min(requested_n_comp, max_comp)
     );
 
-    Matrix weights(sumstat.cols(), ncomp, 0.0);
-    Matrix loadings(sumstat.cols(), ncomp, 0.0);
+    Matrix weights(sumstat.cols(), n_comp, 0.0);
+    Matrix loadings(sumstat.cols(), n_comp, 0.0);
 
-    for (std::size_t comp = 0; comp < ncomp; ++comp) {
+    for (std::size_t comp = 0; comp < n_comp; ++comp) {
         std::size_t y_col = 0;
         double best_norm = -1.0;
         for (std::size_t col = 0; col < y_residual.cols(); ++col) {
@@ -340,14 +340,14 @@ ReducedSummary reduce_pls(
     }
 
     const Matrix target_scores = multiply(target_centered, projection);
-    std::vector<double> reduced_target(ncomp, 0.0);
-    for (std::size_t col = 0; col < ncomp; ++col) {
+    std::vector<double> reduced_target(n_comp, 0.0);
+    for (std::size_t col = 0; col < n_comp; ++col) {
         reduced_target[col] = target_scores(0, col);
     }
 
     ReductionInfo info;
     info.method = ReductionMethod::PLS;
-    info.ncomp = ncomp;
+    info.n_comp = n_comp;
     info.rotation = projection;
     info.center = x_centers;
 
@@ -365,7 +365,7 @@ ReducedSummary reduce_summary_statistics(
     if (options.method == ReductionMethod::None) {
         ReductionInfo info;
         info.method = ReductionMethod::None;
-        info.ncomp = sumstat.cols();
+        info.n_comp = sumstat.cols();
         return ReducedSummary{sumstat, target, info};
     }
 
@@ -373,15 +373,15 @@ ReducedSummary reduce_summary_statistics(
         throw std::invalid_argument("Target and summary statistics mismatch.");
     }
 
-    const std::size_t ncomp = options.ncomp == 0
+    const std::size_t n_comp = options.n_comp == 0
         ? std::min(sumstat.cols(), param.cols())
-        : options.ncomp;
+        : options.n_comp;
 
     if (options.method == ReductionMethod::PCA) {
-        return reduce_pca(sumstat, target, ncomp);
+        return reduce_pca(sumstat, target, n_comp);
     }
     if (options.method == ReductionMethod::PLS) {
-        return reduce_pls(param, sumstat, target, ncomp);
+        return reduce_pls(param, sumstat, target, n_comp);
     }
 
     throw std::invalid_argument("Unsupported summary reduction method.");

@@ -45,7 +45,7 @@ testthat::test_that("invalid method and reduction raise errors", {
       sumstat = data$sumstat,
       tol = 0.10,
       method = "rejection",
-      reduce = "bad_reduction"
+      reduction = "bad_reduction"
     ),
     "Unknown summary reduction"
   )
@@ -115,7 +115,7 @@ testthat::test_that("matrix target and stacked summary statistics work", {
     method = "loclinear",
     hcorr = FALSE,
     reduction = "pls",
-    ncomp = 1L
+    n_comp = 1L
   )
 
   testthat::expect_equal(result_pls$numstat, 1L)

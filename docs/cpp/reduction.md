@@ -47,8 +47,8 @@ Reduction is deterministic.
 
 ## R/Python Relationship
 
-Both frontends expose reduction only through `abc()` arguments `reduction`,
-`reduce`, and `ncomp`.
+Both frontends expose reduction only through `abc()` arguments `reduction` and
+`n_comp`.
 
 ## Relationship To R abc
 

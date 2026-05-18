@@ -18,7 +18,7 @@ testthat::test_that("rejection matches R package abc without reduction", {
     tol = tol,
     method = "rejection",
     transf = base::rep("none", 2L),
-    reduce = "none"
+    reduction = "none"
   )
 
   nacc <- base::ceiling(base::nrow(data$param) * tol)
@@ -55,7 +55,7 @@ testthat::test_that("loclinear matches R package abc without reduction", {
     method = "loclinear",
     hcorr = FALSE,
     transf = base::rep("none", 2L),
-    reduce = "none"
+    reduction = "none"
   )
 
   abcpp_compare_matrix(r_result$unadj.values, cpp_result$unadj.values, 1e-10)
@@ -93,7 +93,7 @@ testthat::test_that("ridge matches R package abc without reduction", {
     hcorr = FALSE,
     transf = base::rep("none", 2L),
     lambda = c(0),
-    reduce = "none"
+    reduction = "none"
   )
 
   abcpp_compare_matrix(r_result$unadj.values, cpp_result$unadj.values, 1e-10)
