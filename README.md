@@ -1,4 +1,5 @@
-# abcpp
+# abcpp <a href="https://yuki-961004.github.io/abcpp/"><img src="./fig/logo.png" alt="LOGO" align="right" width="120"/></a>
+
 
 <!-- badges: start -->
 [![CI](https://github.com/yuki-961004/abcpp/actions/workflows/ci.yaml/badge.svg)](https://github.com/yuki-961004/abcpp/actions/workflows/ci.yaml)
