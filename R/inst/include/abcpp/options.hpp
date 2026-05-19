@@ -8,71 +8,90 @@
 
 namespace abcpp {
 
-enum class Method {
-    Rejection,
-    LocLinear,
-    Ridge,
-    NeuralNet
+enum class method {
+    rejection,
+    loclinear,
+    ridge,
+    neuralnet
 };
 
-using AbcMethod = Method;
+using Method = method;
+using AbcMethod = method;
 
-enum class Kernel {
-    Gaussian,
-    Epanechnikov,
-    Rectangular,
-    Triangular,
-    Biweight,
-    Cosine
+enum class kernel {
+    gaussian,
+    epanechnikov,
+    rectangular,
+    triangular,
+    biweight,
+    cosine
 };
 
-enum class Transform {
-    None,
-    Log,
-    Logit
+using Kernel = kernel;
+
+enum class transform {
+    none,
+    log,
+    logit
 };
 
-enum class ReductionMethod {
-    None,
-    PCA,
-    PLS
+using Transform = transform;
+
+enum class reduction_method {
+    none,
+    pca,
+    pls
 };
+
+using ReductionMethod = reduction_method;
 
 struct ReductionOptions {
-    ReductionMethod method = ReductionMethod::None;
+    reduction_method method = reduction_method::none;
     std::size_t n_comp = 0;
 };
 
-struct AbcOptions {
-    double tol = 0.1;
-    Method method = Method::Rejection;
-    bool hcorr = true;
-    std::vector<Transform> transformations;
-    Matrix logit_bounds;
-    std::vector<bool> subset;
-    Kernel kernel = Kernel::Epanechnikov;
+struct nnet_options {
     int numnet = 10;
     int sizenet = 5;
     std::vector<double> lambda = {0.0001, 0.001, 0.01};
     int maxit = 500;
+    double rang = 0.7;
+    double abstol = 1e-4;
+    double reltol = 1e-8;
+    bool verbose = false;
+    bool skip = false;
+};
+
+struct options {
+    abcpp::method method = abcpp::method::rejection;
+    double tol = 0.01;
+    abcpp::kernel kernel = abcpp::kernel::epanechnikov;
+    bool hcorr = true;
+    abcpp::transform transf = abcpp::transform::none;
+    std::vector<abcpp::transform> transformations;
+    Matrix logit_bounds;
+    std::vector<bool> subset;
     unsigned int seed = 1004;
+    nnet_options nnet;
     ReductionOptions reduction;
 };
 
-Method parse_method(const std::string& value);
+using AbcOptions = options;
 
-Kernel parse_kernel(const std::string& value);
+method parse_method(const std::string& value);
 
-Transform parse_transform(const std::string& value);
+kernel parse_kernel(const std::string& value);
 
-ReductionMethod parse_reduction(const std::string& value);
+transform parse_transform(const std::string& value);
 
-std::string method_name(Method method);
+reduction_method parse_reduction(const std::string& value);
 
-std::string kernel_name(Kernel kernel);
+std::string method_name(abcpp::method method);
 
-std::string transform_name(Transform transform);
+std::string kernel_name(abcpp::kernel kernel);
 
-std::string reduction_name(ReductionMethod reduction);
+std::string transform_name(abcpp::transform transform);
+
+std::string reduction_name(reduction_method reduction);
 
 }  // namespace abcpp

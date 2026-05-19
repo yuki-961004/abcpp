@@ -33,14 +33,11 @@ EXPECTED_KEYS = {
 }
 
 
-def test_output_contains_expected_fields(toy_data):
+def test_output_contains_expected_fields_with_defaults(toy_data):
     result = abcpp.abc(
         target=toy_data["target"],
-        param=toy_data["param"],
-        sumstat=toy_data["sumstat"],
-        tol=0.10,
-        method="rejection",
-        transf=["none", "none"],
+        params=toy_data["param"],
+        sumstats=toy_data["sumstat"],
     )
 
     assert EXPECTED_KEYS.issubset(set(result.keys()))
@@ -49,21 +46,20 @@ def test_output_contains_expected_fields(toy_data):
     assert result["numstat"] == 4
 
 
-def test_rejection_accepts_expected_rows(toy_data):
+def test_partial_control_overrides_defaults(toy_data):
     tol = 0.125
     result = abcpp.abc(
         target=toy_data["target"],
-        param=toy_data["param"],
-        sumstat=toy_data["sumstat"],
-        tol=tol,
-        method="rejection",
-        transf=["none", "none"],
+        params=toy_data["param"],
+        sumstats=toy_data["sumstat"],
+        control={"tol": tol},
     )
 
     region = numpy.asarray(result["region"], dtype=bool)
     expected_count = int(numpy.ceil(toy_data["param"].shape[0] * tol))
     assert int(region.sum()) == expected_count
     assert result["unadj_values"].shape[0] == expected_count
+    assert result["options"]["method"] == "rejection"
 
     numpy.testing.assert_allclose(
         result["unadj_values"],
@@ -76,12 +72,14 @@ def test_rejection_accepts_expected_rows(toy_data):
 def test_loclinear_runs(toy_data):
     result = abcpp.abc(
         target=toy_data["target"],
-        param=toy_data["param"],
-        sumstat=toy_data["sumstat"],
-        tol=0.20,
-        method="loclinear",
-        hcorr=False,
-        transf=["none", "none"],
+        params=toy_data["param"],
+        sumstats=toy_data["sumstat"],
+        control={
+            "method": "loclinear",
+            "tol": 0.20,
+            "hcorr": False,
+            "transf": ["none", "none"],
+        },
     )
 
     assert result["method"] == "loclinear"
@@ -92,13 +90,15 @@ def test_loclinear_runs(toy_data):
 def test_ridge_runs(toy_data):
     result = abcpp.abc(
         target=toy_data["target"],
-        param=toy_data["param"],
-        sumstat=toy_data["sumstat"],
-        tol=0.20,
-        method="ridge",
-        hcorr=False,
-        transf=["none", "none"],
-        lambda_values=[0.001, 0.01],
+        params=toy_data["param"],
+        sumstats=toy_data["sumstat"],
+        control={
+            "method": "ridge",
+            "tol": 0.20,
+            "hcorr": False,
+            "transf": ["none", "none"],
+            "nnet": {"lambda": [0.001, 0.01]},
+        },
     )
 
     assert result["method"] == "ridge"
@@ -106,35 +106,44 @@ def test_ridge_runs(toy_data):
     assert numpy.isfinite(result["adj_values"]).all()
 
 
-def test_neuralnet_runs(toy_data):
+def test_neuralnet_runs_with_nested_nnet_control(toy_data):
     result = abcpp.abc(
         target=toy_data["target"],
-        param=toy_data["param"],
-        sumstat=toy_data["sumstat"],
-        tol=0.20,
-        method="neuralnet",
-        hcorr=False,
-        transf=["none", "none"],
-        numnet=3,
-        sizenet=4,
-        lambda_values=[0.001],
-        seed=1004,
+        params=toy_data["param"],
+        sumstats=toy_data["sumstat"],
+        control={
+            "method": "neuralnet",
+            "tol": 0.20,
+            "hcorr": False,
+            "transf": ["none", "none"],
+            "seed": 1004,
+            "nnet": {
+                "numnet": 3,
+                "sizenet": 4,
+                "lambda": [0.001],
+                "rang": 0.5,
+                "abstol": 1e-4,
+                "reltol": 1e-8,
+                "verbose": False,
+                "skip": True,
+            },
+        },
     )
 
     assert result["method"] == "neuralnet"
     assert result["adj_values"].shape[1] == 2
     assert numpy.isfinite(result["adj_values"]).all()
     assert len(result["lambda"]) == 3
+    assert result["options"]["nnet"]["sizenet"] == 4
+    assert result["options"]["nnet"]["skip"] is True
 
 
 def test_summary_runs(toy_data):
     result = abcpp.abc(
         target=toy_data["target"],
-        param=toy_data["param"],
-        sumstat=toy_data["sumstat"],
-        tol=0.10,
-        method="rejection",
-        transf=["none", "none"],
+        params=toy_data["param"],
+        sumstats=toy_data["sumstat"],
+        control={"tol": 0.10},
     )
     summary = abcpp.summary(result)
 
@@ -147,11 +156,13 @@ def test_summary_runs(toy_data):
 def test_summary_unadjusted_override_runs(toy_data):
     result = abcpp.abc(
         target=toy_data["target"],
-        param=toy_data["param"],
-        sumstat=toy_data["sumstat"],
-        tol=0.20,
-        method="loclinear",
-        hcorr=False,
+        params=toy_data["param"],
+        sumstats=toy_data["sumstat"],
+        control={
+            "method": "loclinear",
+            "tol": 0.20,
+            "hcorr": False,
+        },
     )
     summary = abcpp.summary(result, unadj=True, intvl=0.50)
 

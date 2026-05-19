@@ -22,125 +22,125 @@ std::string lower(std::string value) {
 
 }  // namespace
 
-Method parse_method(const std::string& value) {
+method parse_method(const std::string& value) {
     const std::string key = lower(value);
     if (key == "rejection") {
-        return Method::Rejection;
+        return method::rejection;
     }
     if (key == "loclinear") {
-        return Method::LocLinear;
+        return method::loclinear;
     }
     if (key == "ridge") {
-        return Method::Ridge;
+        return method::ridge;
     }
     if (key == "neuralnet") {
-        return Method::NeuralNet;
+        return method::neuralnet;
     }
     throw std::invalid_argument("Unknown ABC method.");
 }
 
-Kernel parse_kernel(const std::string& value) {
+kernel parse_kernel(const std::string& value) {
     const std::string key = lower(value);
     if (key == "gaussian") {
-        return Kernel::Gaussian;
+        return kernel::gaussian;
     }
     if (key == "epanechnikov") {
-        return Kernel::Epanechnikov;
+        return kernel::epanechnikov;
     }
     if (key == "rectangular") {
-        return Kernel::Rectangular;
+        return kernel::rectangular;
     }
     if (key == "triangular") {
-        return Kernel::Triangular;
+        return kernel::triangular;
     }
     if (key == "biweight") {
-        return Kernel::Biweight;
+        return kernel::biweight;
     }
     if (key == "cosine") {
-        return Kernel::Cosine;
+        return kernel::cosine;
     }
     throw std::invalid_argument("Unknown ABC kernel.");
 }
 
-Transform parse_transform(const std::string& value) {
+transform parse_transform(const std::string& value) {
     const std::string key = lower(value);
     if (key == "none") {
-        return Transform::None;
+        return transform::none;
     }
     if (key == "log") {
-        return Transform::Log;
+        return transform::log;
     }
     if (key == "logit") {
-        return Transform::Logit;
+        return transform::logit;
     }
     throw std::invalid_argument("Unknown parameter transformation.");
 }
 
-ReductionMethod parse_reduction(const std::string& value) {
+reduction_method parse_reduction(const std::string& value) {
     const std::string key = lower(value);
     if (key.empty() || key == "none" || key == "null") {
-        return ReductionMethod::None;
+        return reduction_method::none;
     }
     if (key == "pca") {
-        return ReductionMethod::PCA;
+        return reduction_method::pca;
     }
     if (key == "pls") {
-        return ReductionMethod::PLS;
+        return reduction_method::pls;
     }
     throw std::invalid_argument("Unknown summary reduction method.");
 }
 
-std::string method_name(Method method) {
-    switch (method) {
-    case Method::Rejection:
+std::string method_name(abcpp::method value) {
+    switch (value) {
+    case method::rejection:
         return "rejection";
-    case Method::LocLinear:
+    case method::loclinear:
         return "loclinear";
-    case Method::Ridge:
+    case method::ridge:
         return "ridge";
-    case Method::NeuralNet:
+    case method::neuralnet:
         return "neuralnet";
     }
     return "unknown";
 }
 
-std::string kernel_name(Kernel kernel) {
-    switch (kernel) {
-    case Kernel::Gaussian:
+std::string kernel_name(abcpp::kernel value) {
+    switch (value) {
+    case kernel::gaussian:
         return "gaussian";
-    case Kernel::Epanechnikov:
+    case kernel::epanechnikov:
         return "epanechnikov";
-    case Kernel::Rectangular:
+    case kernel::rectangular:
         return "rectangular";
-    case Kernel::Triangular:
+    case kernel::triangular:
         return "triangular";
-    case Kernel::Biweight:
+    case kernel::biweight:
         return "biweight";
-    case Kernel::Cosine:
+    case kernel::cosine:
         return "cosine";
     }
     return "unknown";
 }
 
-std::string transform_name(Transform transform) {
-    switch (transform) {
-    case Transform::None:
+std::string transform_name(abcpp::transform value) {
+    switch (value) {
+    case transform::none:
         return "none";
-    case Transform::Log:
+    case transform::log:
         return "log";
-    case Transform::Logit:
+    case transform::logit:
         return "logit";
     }
     return "unknown";
 }
 
-std::string reduction_name(ReductionMethod reduction) {
+std::string reduction_name(reduction_method reduction) {
     switch (reduction) {
-    case ReductionMethod::None:
+    case reduction_method::none:
         return "none";
-    case ReductionMethod::PCA:
+    case reduction_method::pca:
         return "PCA";
-    case ReductionMethod::PLS:
+    case reduction_method::pls:
         return "PLS";
     }
     return "unknown";

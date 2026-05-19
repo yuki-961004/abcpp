@@ -1,5 +1,5 @@
-import pytest
 import numpy
+import pytest
 
 abcpp = pytest.importorskip("abcpp")
 
@@ -8,19 +8,17 @@ def test_dimension_mismatch_raises(toy_data):
     with pytest.raises(Exception, match="target summary dimension"):
         abcpp.abc(
             target=toy_data["target"][:-1],
-            param=toy_data["param"],
-            sumstat=toy_data["sumstat"],
-            tol=0.10,
-            method="rejection",
+            params=toy_data["param"],
+            sumstats=toy_data["sumstat"],
+            control={"tol": 0.10},
         )
 
     with pytest.raises(Exception, match="param.rows"):
         abcpp.abc(
             target=toy_data["target"],
-            param=toy_data["param"][:-1, :],
-            sumstat=toy_data["sumstat"],
-            tol=0.10,
-            method="rejection",
+            params=toy_data["param"][:-1, :],
+            sumstats=toy_data["sumstat"],
+            control={"tol": 0.10},
         )
 
 
@@ -28,10 +26,9 @@ def test_invalid_method_raises(toy_data):
     with pytest.raises(Exception, match="Unknown ABC method"):
         abcpp.abc(
             target=toy_data["target"],
-            param=toy_data["param"],
-            sumstat=toy_data["sumstat"],
-            tol=0.10,
-            method="bad_method",
+            params=toy_data["param"],
+            sumstats=toy_data["sumstat"],
+            control={"method": "bad_method", "tol": 0.10},
         )
 
 
@@ -39,11 +36,9 @@ def test_invalid_reduction_raises(toy_data):
     with pytest.raises(Exception, match="Unknown summary reduction"):
         abcpp.abc(
             target=toy_data["target"],
-            param=toy_data["param"],
-            sumstat=toy_data["sumstat"],
-            tol=0.10,
-            method="rejection",
-            reduction="bad_reduction",
+            params=toy_data["param"],
+            sumstats=toy_data["sumstat"],
+            control={"tol": 0.10, "reduction": "bad_reduction"},
         )
 
 
@@ -51,10 +46,9 @@ def test_invalid_tolerance_raises(toy_data):
     with pytest.raises(Exception, match="tol must be"):
         abcpp.abc(
             target=toy_data["target"],
-            param=toy_data["param"],
-            sumstat=toy_data["sumstat"],
-            tol=0,
-            method="rejection",
+            params=toy_data["param"],
+            sumstats=toy_data["sumstat"],
+            control={"tol": 0},
         )
 
 
@@ -64,11 +58,9 @@ def test_matrix_target_and_stacked_summary_statistics_work(toy_data):
 
     result_none = abcpp.abc(
         target=target_matrix,
-        param=toy_data["param"],
-        sumstat=sumstat_matrix,
-        tol=0.10,
-        method="rejection",
-        reduction="none",
+        params=toy_data["param"],
+        sumstats=sumstat_matrix,
+        control={"tol": 0.10, "reduction": "none"},
     )
 
     assert result_none["numstat"] == 2
@@ -78,13 +70,15 @@ def test_matrix_target_and_stacked_summary_statistics_work(toy_data):
 
     result_pls = abcpp.abc(
         target=target_stacked,
-        param=toy_data["param"],
-        sumstat=stacked_sumstat,
-        tol=0.30,
-        method="loclinear",
-        hcorr=False,
-        reduction="pls",
-        n_comp=1,
+        params=toy_data["param"],
+        sumstats=stacked_sumstat,
+        control={
+            "method": "loclinear",
+            "tol": 0.30,
+            "hcorr": False,
+            "reduction": "pls",
+            "n_comp": 1,
+        },
     )
 
     assert result_pls["numstat"] == 1
@@ -104,11 +98,9 @@ def test_matrix_target_and_list_summary_statistics_work():
 
     result = abcpp.abc(
         target=target,
-        param=param,
-        sumstat=sumstats,
-        tol=0.40,
-        method="rejection",
-        reduction="none",
+        params=param,
+        sumstats=sumstats,
+        control={"tol": 0.40, "reduction": "none"},
     )
 
     assert result["numstat"] == 4
@@ -130,11 +122,9 @@ def test_matrix_target_and_dict_summary_statistics_work():
 
     result = abcpp.abc(
         target=target,
-        param=param,
-        sumstat=sumstats,
-        tol=0.40,
-        method="rejection",
-        reduction="none",
+        params=param,
+        sumstats=sumstats,
+        control={"tol": 0.40, "reduction": "none"},
     )
 
     assert result["numstat"] == 4
@@ -147,10 +137,9 @@ def test_one_row_parameter_matrix_is_treated_as_one_parameter(toy_data):
 
     result = abcpp.abc(
         target=toy_data["target"],
-        param=param_row,
-        sumstat=toy_data["sumstat"],
-        tol=0.10,
-        method="rejection",
+        params=param_row,
+        sumstats=toy_data["sumstat"],
+        control={"tol": 0.10},
     )
 
     assert result["numparam"] == 1
@@ -163,10 +152,9 @@ def test_one_dimensional_param_and_sumstat_are_reshaped():
 
     result = abcpp.abc(
         target=[0.51],
-        param=param,
-        sumstat=sumstat,
-        tol=0.20,
-        method="rejection",
+        params=param,
+        sumstats=sumstat,
+        control={"tol": 0.20},
     )
 
     assert result["numparam"] == 1

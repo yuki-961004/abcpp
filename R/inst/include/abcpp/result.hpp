@@ -9,7 +9,7 @@
 namespace abcpp {
 
 struct ReductionInfo {
-    ReductionMethod method = ReductionMethod::None;
+    reduction_method method = reduction_method::none;
     std::size_t n_comp = 0;
     Matrix rotation;
     std::vector<double> center;
@@ -31,11 +31,11 @@ struct AbcResult {
     std::vector<std::size_t> accepted_indices;
     std::vector<bool> region;
     std::vector<bool> na_action;
-    std::vector<Transform> transformations;
+    std::vector<transform> transformations;
     Matrix logit_bounds;
-    AbcOptions options;
-    Method method = Method::Rejection;
-    Kernel kernel = Kernel::Epanechnikov;
+    abcpp::options options;
+    abcpp::method method = abcpp::method::rejection;
+    abcpp::kernel kernel = abcpp::kernel::epanechnikov;
     bool hcorr = true;
     std::vector<double> lambda;
     int numparam = 0;
@@ -49,6 +49,8 @@ struct AbcResult {
     std::vector<std::string> parameter_names;
     std::vector<std::string> statistic_names;
 };
+
+using result = AbcResult;
 
 struct SummaryColumn {
     double min = 0.0;

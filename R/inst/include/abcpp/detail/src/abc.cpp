@@ -24,17 +24,17 @@ std::string matrix_shape(const Matrix& matrix) {
     return out.str();
 }
 
-std::vector<Transform> normalized_transforms(
+std::vector<transform> normalized_transforms(
     const AbcOptions& options,
     std::size_t numparam
 ) {
-    std::vector<Transform> transforms = options.transformations;
+    std::vector<transform> transforms = options.transformations;
     if (transforms.empty()) {
-        transforms.push_back(Transform::None);
+        transforms.push_back(transform::none);
     }
 
-    if (options.method == Method::Rejection) {
-        return std::vector<Transform>(numparam, Transform::None);
+    if (options.method == method::rejection) {
+        return std::vector<transform>(numparam, transform::none);
     }
 
     if (transforms.size() == 1 && numparam > 1) {
@@ -66,10 +66,10 @@ std::vector<bool> build_good_rows(
 ) {
     std::vector<bool> keep(sumstat.rows(), true);
     for (std::size_t row = 0; row < sumstat.rows(); ++row) {
-        // 这里同时检查参数和统计量, 避免回归阶段接收到非有限值.
+        // Developer note.
         keep[row] = row_is_finite(sumstat, row) && row_is_finite(param, row);
         if (!subset.empty()) {
-            // subset 是用户显式筛选条件, FALSE 的行直接排除.
+            // Developer note.
             keep[row] = keep[row] && subset[row];
         }
     }
@@ -95,7 +95,7 @@ Matrix scale_sumstat(
             continue;
         }
 
-        // R abc::normalise 只除以 MAD, 不做均值中心化.
+        // Developer note.
         for (std::size_t row = 0; row < sumstat.rows(); ++row) {
             scaled(row, col) = sumstat(row, col) / scale;
         }
@@ -126,7 +126,7 @@ std::vector<double> compute_distances(
 
     for (std::size_t row = 0; row < scaled_sumstat.rows(); ++row) {
         if (!good_rows[row]) {
-            // 保留 R abc 的思路, 坏行距离放大到不会被 tol 选中.
+            // Developer note.
             dist[row] = std::floor(max_good + 10.0);
         }
     }
@@ -170,16 +170,16 @@ std::vector<bool> select_region(
     std::vector<bool> region(n, false);
     std::size_t accepted = 0;
     for (std::size_t row = 0; row < n; ++row) {
-        // ties 按原始行顺序截断, 这复刻 R 代码中的 cumsum 行为.
+        // Developer note.
         if (good_rows[row] && distances[row] <= cutoff && accepted < nacc) {
             region[row] = true;
             ++accepted;
         }
     }
 
-    if (kernel == Kernel::Gaussian) {
+    if (kernel == kernel::gaussian) {
         for (std::size_t row = 0; row < n; ++row) {
-            // gaussian kernel 在 R abc 中会使用全部可用模拟样本.
+            // Developer note.
             region[row] = good_rows[row];
         }
     }
@@ -230,26 +230,26 @@ std::vector<double> build_weights(
     for (std::size_t i = 0; i < accepted_rows.size(); ++i) {
         const double ratio = distances[accepted_rows[i]] / denom;
         switch (kernel) {
-        case Kernel::Epanechnikov:
+        case kernel::epanechnikov:
             weights[i] = 1.0 - ratio * ratio;
             break;
-        case Kernel::Rectangular:
+        case kernel::rectangular:
             weights[i] = ratio;
             break;
-        case Kernel::Gaussian: {
+        case kernel::gaussian: {
             const double sigma = std::max(cutoff / 2.0, kTiny);
             const double z = distances[accepted_rows[i]] / sigma;
             weights[i] = std::exp(-0.5 * z * z) /
                 std::sqrt(2.0 * 3.14159265358979323846);
             break;
         }
-        case Kernel::Triangular:
+        case kernel::triangular:
             weights[i] = 1.0 - std::fabs(ratio);
             break;
-        case Kernel::Biweight:
+        case kernel::biweight:
             weights[i] = (1.0 - ratio * ratio) * (1.0 - ratio * ratio);
             break;
-        case Kernel::Cosine:
+        case kernel::cosine:
             weights[i] = std::cos(
                 3.14159265358979323846 * 0.5 * ratio
             );
@@ -266,12 +266,12 @@ std::vector<double> build_weights(
 
 Matrix transform_parameters(
     const Matrix& param,
-    const std::vector<Transform>& transforms,
+    const std::vector<transform>& transforms,
     const Matrix& logit_bounds
 ) {
     Matrix out = param;
     for (std::size_t col = 0; col < param.cols(); ++col) {
-        if (transforms[col] == Transform::Log) {
+        if (transforms[col] == transform::log) {
             double replacement = std::numeric_limits<double>::infinity();
             for (std::size_t row = 0; row < param.rows(); ++row) {
                 if (param(row, col) > 0.0) {
@@ -290,7 +290,7 @@ Matrix transform_parameters(
             }
         }
 
-        if (transforms[col] == Transform::Logit) {
+        if (transforms[col] == transform::logit) {
             if (logit_bounds.rows() <= col || logit_bounds.cols() != 2) {
                 throw std::invalid_argument("Logit bounds are missing.");
             }
@@ -337,7 +337,7 @@ Matrix transform_parameters(
 
 void back_transform(
     Matrix& matrix,
-    const std::vector<Transform>& transforms,
+    const std::vector<transform>& transforms,
     const Matrix& logit_bounds
 ) {
     if (matrix.empty()) {
@@ -346,10 +346,10 @@ void back_transform(
 
     for (std::size_t col = 0; col < matrix.cols(); ++col) {
         for (std::size_t row = 0; row < matrix.rows(); ++row) {
-            if (transforms[col] == Transform::Log) {
+            if (transforms[col] == transform::log) {
                 matrix(row, col) = std::exp(matrix(row, col));
             }
-            if (transforms[col] == Transform::Logit) {
+            if (transforms[col] == transform::logit) {
                 const double lower = logit_bounds(col, 0);
                 const double upper = logit_bounds(col, 1);
                 const double exp_value = std::exp(matrix(row, col));
@@ -805,16 +805,19 @@ double clipped_sigmoid(double value) {
 std::size_t nnet_weight_count(
     std::size_t inputs,
     std::size_t hidden,
-    std::size_t outputs
+    std::size_t outputs,
+    bool skip
 ) {
-    return hidden * (inputs + 1) + outputs * (hidden + 1);
+    return hidden * (inputs + 1) + outputs * (hidden + 1) +
+        (skip ? outputs * inputs : 0);
 }
 
 std::vector<double> nnet_forward(
     const std::vector<double>& input,
     const std::vector<double>& wts,
     std::size_t hidden,
-    std::size_t outputs
+    std::size_t outputs,
+    bool skip
 ) {
     const std::size_t inputs = input.size();
     std::vector<double> hidden_values(hidden, 0.0);
@@ -830,11 +833,18 @@ std::vector<double> nnet_forward(
     }
 
     const std::size_t output_offset = hidden * (inputs + 1);
+    const std::size_t skip_offset = output_offset + outputs * (hidden + 1);
     for (std::size_t out_col = 0; out_col < outputs; ++out_col) {
         const std::size_t base = output_offset + out_col * (hidden + 1);
         double sum = wts[base];
         for (std::size_t h = 0; h < hidden; ++h) {
             sum += hidden_values[h] * wts[base + 1 + h];
+        }
+        if (skip) {
+            const std::size_t skip_base = skip_offset + out_col * inputs;
+            for (std::size_t col = 0; col < inputs; ++col) {
+                sum += input[col] * wts[skip_base + col];
+            }
         }
         out[out_col] = sum;
     }
@@ -849,6 +859,7 @@ double nnet_value_gradient(
     const std::vector<double>& wts,
     std::size_t hidden,
     double decay,
+    bool skip,
     std::vector<double>& gradient
 ) {
     const std::size_t inputs = x.cols();
@@ -863,6 +874,7 @@ double nnet_value_gradient(
     std::vector<double> hidden_error(hidden, 0.0);
 
     const std::size_t output_offset = hidden * (inputs + 1);
+    const std::size_t skip_offset = output_offset + outputs * (hidden + 1);
     for (std::size_t row = 0; row < x.rows(); ++row) {
         for (std::size_t col = 0; col < inputs; ++col) {
             input[col] = x(row, col);
@@ -886,6 +898,12 @@ double nnet_value_gradient(
             for (std::size_t h = 0; h < hidden; ++h) {
                 sum += hidden_values[h] * wts[base + 1 + h];
             }
+            if (skip) {
+                const std::size_t skip_base = skip_offset + out_col * inputs;
+                for (std::size_t col = 0; col < inputs; ++col) {
+                    sum += input[col] * wts[skip_base + col];
+                }
+            }
             output_values[out_col] = sum;
 
             const double diff = sum - response(row, out_col);
@@ -898,6 +916,13 @@ double nnet_value_gradient(
                     output_delta[out_col] * hidden_values[h];
                 hidden_error[h] += output_delta[out_col] *
                     wts[base + 1 + h];
+            }
+            if (skip) {
+                const std::size_t skip_base = skip_offset + out_col * inputs;
+                for (std::size_t col = 0; col < inputs; ++col) {
+                    gradient[skip_base + col] += row_weight *
+                        output_delta[out_col] * input[col];
+                }
             }
         }
 
@@ -927,14 +952,24 @@ std::vector<double> bfgs_train_nnet(
     std::size_t hidden,
     double decay,
     int maxit,
+    double rang,
+    double abstol,
+    double reltol,
+    bool,
+    bool skip,
     std::mt19937& rng
 ) {
     const std::size_t nwts = nnet_weight_count(
         x.cols(),
         hidden,
-        response.cols()
+        response.cols(),
+        skip
     );
-    std::uniform_real_distribution<double> uniform(-0.7, 0.7);
+    const double weight_range = std::max(0.0, rang);
+    std::uniform_real_distribution<double> uniform(
+        -weight_range,
+        weight_range
+    );
     std::vector<double> current(nwts, 0.0);
     for (double& value : current) {
         value = uniform(rng);
@@ -949,11 +984,12 @@ std::vector<double> bfgs_train_nnet(
         current,
         hidden,
         decay,
+        skip,
         gradient
     );
 
     for (int iter = 0; iter < std::max(1, maxit); ++iter) {
-        if (!std::isfinite(value) || vector_norm(gradient) < 1e-6) {
+        if (!std::isfinite(value) || vector_norm(gradient) < abstol) {
             break;
         }
 
@@ -992,6 +1028,7 @@ std::vector<double> bfgs_train_nnet(
                 candidate,
                 hidden,
                 decay,
+                skip,
                 candidate_gradient
             );
 
@@ -1040,7 +1077,7 @@ std::vector<double> bfgs_train_nnet(
 
         const double improvement = std::fabs(old_value - value);
         const double scale = std::max(1.0, std::fabs(old_value));
-        if (improvement <= 1e-8 * scale) {
+        if (improvement <= std::max(abstol, reltol * scale)) {
             break;
         }
     }
@@ -1052,7 +1089,8 @@ Matrix nnet_predict_matrix(
     const Matrix& x,
     const std::vector<double>& wts,
     std::size_t hidden,
-    std::size_t outputs
+    std::size_t outputs,
+    bool skip
 ) {
     Matrix out(x.rows(), outputs, 0.0);
     for (std::size_t row = 0; row < x.rows(); ++row) {
@@ -1060,7 +1098,8 @@ Matrix nnet_predict_matrix(
             x.row(row),
             wts,
             hidden,
-            outputs
+            outputs,
+            skip
         );
         out.set_row(row, pred);
     }
@@ -1072,13 +1111,15 @@ Matrix nnet_repeat_target_prediction(
     const std::vector<double>& wts,
     std::size_t rows,
     std::size_t hidden,
-    std::size_t outputs
+    std::size_t outputs,
+    bool skip
 ) {
     const std::vector<double> pred = nnet_forward(
         target,
         wts,
         hidden,
-        outputs
+        outputs,
+        skip
     );
     Matrix out(rows, outputs, 0.0);
     for (std::size_t row = 0; row < rows; ++row) {
@@ -1099,7 +1140,7 @@ NNetEnsemble train_nnet_ensemble(
     const std::vector<double>& weights,
     const std::vector<double>& lambdas,
     std::size_t hidden,
-    int maxit,
+    const nnet_options& nnet,
     std::mt19937& rng
 ) {
     std::vector<Matrix> fitted_values;
@@ -1112,21 +1153,28 @@ NNetEnsemble train_nnet_ensemble(
             weights,
             hidden,
             lambda,
-            maxit,
+            nnet.maxit,
+            nnet.rang,
+            nnet.abstol,
+            nnet.reltol,
+            nnet.verbose,
+            nnet.skip,
             rng
         );
         fitted_values.push_back(nnet_predict_matrix(
             x,
             wts,
             hidden,
-            response.cols()
+            response.cols(),
+            nnet.skip
         ));
         predictions.push_back(nnet_repeat_target_prediction(
             target,
             wts,
             response.rows(),
             hidden,
-            response.cols()
+            response.cols(),
+            nnet.skip
         ));
     }
 
@@ -1145,21 +1193,21 @@ Matrix run_neural_like(
     Matrix& residuals,
     std::vector<double>& lambda_used
 ) {
-    const int net_count = std::max(1, options.numnet);
+    const int net_count = std::max(1, options.nnet.numnet);
     const std::size_t hidden = static_cast<std::size_t>(
-        std::max(1, options.sizenet)
+        std::max(1, options.nnet.sizenet)
     );
 
     std::mt19937 rng(options.seed);
     std::uniform_int_distribution<std::size_t> lambda_index(
         0,
-        options.lambda.size() - 1
+        options.nnet.lambda.size() - 1
     );
 
     lambda_used.clear();
     lambda_used.reserve(static_cast<std::size_t>(net_count));
     for (int net = 0; net < net_count; ++net) {
-        lambda_used.push_back(options.lambda[lambda_index(rng)]);
+        lambda_used.push_back(options.nnet.lambda[lambda_index(rng)]);
     }
 
     const NNetEnsemble primary = train_nnet_ensemble(
@@ -1169,7 +1217,7 @@ Matrix run_neural_like(
         weights,
         lambda_used,
         hidden,
-        options.maxit,
+        options.nnet,
         rng
     );
 
@@ -1185,7 +1233,7 @@ Matrix run_neural_like(
             weights,
             lambda_used,
             hidden,
-            options.maxit,
+            options.nnet,
             rng
         );
 
@@ -1301,11 +1349,11 @@ Matrix reshape_sumstat_for_param(
 
 }  // namespace
 
-AbcResult abc(
+result fit(
     const std::vector<double>& raw_target,
     const Matrix& raw_param,
     const Matrix& raw_sumstat,
-    const AbcOptions& raw_options
+    const options& raw_options
 ) {
     if (raw_param.rows() != raw_sumstat.rows()) {
         std::ostringstream message;
@@ -1343,8 +1391,24 @@ AbcResult abc(
                 << ".";
         throw std::invalid_argument(message.str());
     }
-    if (raw_options.lambda.empty()) {
+    if (raw_options.nnet.lambda.empty()) {
         throw std::invalid_argument("lambda must contain at least one value.");
+    }
+    if (raw_options.nnet.numnet <= 0) {
+        throw std::invalid_argument("nnet.numnet must be positive.");
+    }
+    if (raw_options.nnet.sizenet <= 0) {
+        throw std::invalid_argument("nnet.sizenet must be positive.");
+    }
+    if (raw_options.nnet.maxit <= 0) {
+        throw std::invalid_argument("nnet.maxit must be positive.");
+    }
+    if (raw_options.nnet.rang < 0.0 ||
+        raw_options.nnet.abstol < 0.0 ||
+        raw_options.nnet.reltol < 0.0) {
+        throw std::invalid_argument(
+            "nnet.rang, nnet.abstol, and nnet.reltol must be non-negative."
+        );
     }
 
     AbcOptions options = raw_options;
@@ -1363,7 +1427,7 @@ AbcResult abc(
     Matrix param = raw_param;
     Matrix sumstat = reduced.sumstat;
     std::vector<double> target = reduced.target;
-    const std::vector<Transform> transforms = normalized_transforms(
+    const std::vector<transform> transforms = normalized_transforms(
         options,
         param.cols()
     );
@@ -1430,7 +1494,7 @@ AbcResult abc(
     for (std::size_t col = 0; col < accepted_sumstat.cols(); ++col) {
         any_var = any_var || has_variance(accepted_sumstat, col);
     }
-    if (!any_var && options.method != Method::Rejection) {
+    if (!any_var && options.method != method::rejection) {
         throw std::runtime_error(
             "Zero variance in accepted summary statistics."
         );
@@ -1453,7 +1517,7 @@ AbcResult abc(
     result.numstat = static_cast<int>(sumstat.cols());
     result.reduction = reduced.info;
 
-    if (options.method == Method::Rejection) {
+    if (options.method == method::rejection) {
         result.weights = Matrix(accepted_rows.size(), 1, 1.0);
         result.diagnostics.aic = result.aic;
         result.diagnostics.bic = result.bic;
@@ -1484,7 +1548,7 @@ AbcResult abc(
     Matrix response = unadjusted;
     Matrix residuals;
 
-    if (options.method == Method::LocLinear) {
+    if (options.method == method::loclinear) {
         result.adj_values = run_loclinear(
             design,
             target_design,
@@ -1497,7 +1561,7 @@ AbcResult abc(
         );
     }
 
-    if (options.method == Method::Ridge) {
+    if (options.method == method::ridge) {
         const std::vector<double> scales = param_mads(
             transformed_param,
             good_rows
@@ -1508,14 +1572,14 @@ AbcResult abc(
             target_design,
             response,
             weights_vec,
-            options.lambda,
+            options.nnet.lambda,
             options.hcorr,
             residuals
         );
         multiply_columns(result.adj_values, scales);
     }
 
-    if (options.method == Method::NeuralNet) {
+    if (options.method == method::neuralnet) {
         const std::vector<double> scales = param_mads(
             transformed_param,
             good_rows
@@ -1543,18 +1607,18 @@ AbcResult abc(
     return result;
 }
 
-AbcResult abc(
+result fit(
     const Matrix& raw_target,
     const Matrix& raw_param,
     const Matrix& raw_sumstat,
-    const AbcOptions& raw_options
+    const options& raw_options
 ) {
     const Matrix prepared_sumstat = reshape_sumstat_for_param(
         raw_sumstat,
         raw_param.rows()
     );
 
-    return abc(
+    return fit(
         flatten_matrix(raw_target),
         raw_param,
         prepared_sumstat,
@@ -1562,11 +1626,11 @@ AbcResult abc(
     );
 }
 
-AbcResult abc(
+result fit(
     const Matrix& raw_target,
     const Matrix& raw_param,
     const std::vector<Matrix>& raw_sumstats,
-    const AbcOptions& raw_options
+    const options& raw_options
 ) {
     const Matrix prepared_sumstat = flatten_sumstat_matrices(
         raw_target,
@@ -1574,12 +1638,119 @@ AbcResult abc(
         raw_sumstats
     );
 
-    return abc(
+    return fit(
         flatten_matrix(raw_target),
         raw_param,
         prepared_sumstat,
         raw_options
     );
+}
+
+opt& opt::set_target(const Matrix& target) {
+    target_ = target;
+    has_target_ = true;
+    return *this;
+}
+
+opt& opt::set_params(const Matrix& params) {
+    params_ = params;
+    has_params_ = true;
+    return *this;
+}
+
+opt& opt::set_sumstats(const Matrix& sumstats) {
+    sumstats_ = sumstats;
+    has_sumstats_ = true;
+    return *this;
+}
+
+opt& opt::set_method(abcpp::method value) {
+    options_.method = value;
+    return *this;
+}
+
+opt& opt::set_tol(double value) {
+    options_.tol = value;
+    return *this;
+}
+
+opt& opt::set_kernel(abcpp::kernel value) {
+    options_.kernel = value;
+    return *this;
+}
+
+opt& opt::set_hcorr(bool value) {
+    options_.hcorr = value;
+    return *this;
+}
+
+opt& opt::set_transform(abcpp::transform value) {
+    options_.transf = value;
+    options_.transformations.assign(1, value);
+    return *this;
+}
+
+opt& opt::set_seed(unsigned int value) {
+    options_.seed = value;
+    return *this;
+}
+
+opt& opt::set_nnet_numnet(int value) {
+    options_.nnet.numnet = value;
+    return *this;
+}
+
+opt& opt::set_nnet_sizenet(int value) {
+    options_.nnet.sizenet = value;
+    return *this;
+}
+
+opt& opt::set_nnet_lambda(const std::vector<double>& value) {
+    options_.nnet.lambda = value;
+    return *this;
+}
+
+opt& opt::set_nnet_maxit(int value) {
+    options_.nnet.maxit = value;
+    return *this;
+}
+
+opt& opt::set_nnet_rang(double value) {
+    options_.nnet.rang = value;
+    return *this;
+}
+
+opt& opt::set_nnet_abstol(double value) {
+    options_.nnet.abstol = value;
+    return *this;
+}
+
+opt& opt::set_nnet_reltol(double value) {
+    options_.nnet.reltol = value;
+    return *this;
+}
+
+opt& opt::set_nnet_verbose(bool value) {
+    options_.nnet.verbose = value;
+    return *this;
+}
+
+opt& opt::set_nnet_skip(bool value) {
+    options_.nnet.skip = value;
+    return *this;
+}
+
+result opt::run() const {
+    if (!has_target_) {
+        throw std::invalid_argument("opt::run() requires target to be set.");
+    }
+    if (!has_params_) {
+        throw std::invalid_argument("opt::run() requires params to be set.");
+    }
+    if (!has_sumstats_) {
+        throw std::invalid_argument("opt::run() requires sumstats to be set.");
+    }
+    return fit(target_, params_, sumstats_, options_);
 }
 
 }  // namespace abcpp

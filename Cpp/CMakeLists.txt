@@ -9,11 +9,11 @@ add_library(abcpp
     src/summary.cpp
 )
 
-add_library(abcpp::abc ALIAS abcpp)
+add_library(abcpp::abcpp ALIAS abcpp)
 
 set_property(TARGET abcpp PROPERTY POSITION_INDEPENDENT_CODE ON)
 set_target_properties(abcpp PROPERTIES
-    EXPORT_NAME abc
+    EXPORT_NAME abcpp
     OUTPUT_NAME abcpp
 )
 

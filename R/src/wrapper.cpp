@@ -41,10 +41,10 @@ Rcpp::NumericMatrix cpp_matrix_to_r(const abcpp::Matrix& matrix) {
     return out;
 }
 
-std::vector<abcpp::Transform> r_transforms_to_cpp(
+std::vector<abcpp::transform> r_transforms_to_cpp(
     const Rcpp::CharacterVector& transforms
 ) {
-    std::vector<abcpp::Transform> out;
+    std::vector<abcpp::transform> out;
     out.reserve(static_cast<std::size_t>(transforms.size()));
     for (R_xlen_t i = 0; i < transforms.size(); ++i) {
         out.push_back(abcpp::parse_transform(
@@ -55,7 +55,7 @@ std::vector<abcpp::Transform> r_transforms_to_cpp(
 }
 
 Rcpp::CharacterVector cpp_transforms_to_r(
-    const std::vector<abcpp::Transform>& transforms
+    const std::vector<abcpp::transform>& transforms
 ) {
     Rcpp::CharacterVector out(
         static_cast<R_xlen_t>(transforms.size())
@@ -113,6 +113,11 @@ abcpp::AbcOptions make_options(
     SEXP sizenet_sexp,
     SEXP lambda_sexp,
     SEXP maxit_sexp,
+    SEXP rang_sexp,
+    SEXP abstol_sexp,
+    SEXP reltol_sexp,
+    SEXP verbose_sexp,
+    SEXP skip_sexp,
     SEXP seed_sexp,
     SEXP reduction_sexp,
     SEXP n_comp_sexp
@@ -131,10 +136,15 @@ abcpp::AbcOptions make_options(
     options.logit_bounds = r_matrix_to_cpp(logit_bounds);
     options.subset = r_subset_to_cpp(subset);
     options.kernel = abcpp::parse_kernel(Rcpp::as<std::string>(kernel_sexp));
-    options.numnet = Rcpp::as<int>(numnet_sexp);
-    options.sizenet = Rcpp::as<int>(sizenet_sexp);
-    options.lambda = Rcpp::as<std::vector<double>>(lambda);
-    options.maxit = Rcpp::as<int>(maxit_sexp);
+    options.nnet.numnet = Rcpp::as<int>(numnet_sexp);
+    options.nnet.sizenet = Rcpp::as<int>(sizenet_sexp);
+    options.nnet.lambda = Rcpp::as<std::vector<double>>(lambda);
+    options.nnet.maxit = Rcpp::as<int>(maxit_sexp);
+    options.nnet.rang = Rcpp::as<double>(rang_sexp);
+    options.nnet.abstol = Rcpp::as<double>(abstol_sexp);
+    options.nnet.reltol = Rcpp::as<double>(reltol_sexp);
+    options.nnet.verbose = Rcpp::as<bool>(verbose_sexp);
+    options.nnet.skip = Rcpp::as<bool>(skip_sexp);
     options.seed = static_cast<unsigned int>(Rcpp::as<int>(seed_sexp));
     options.reduction.method = abcpp::parse_reduction(
         Rcpp::as<std::string>(reduction_sexp)
@@ -159,16 +169,25 @@ SEXP result_to_r(const abcpp::AbcResult& result) {
         Rcpp::Named("lambda") = result.diagnostics.lambda
     );
 
+    Rcpp::List nnet_info = Rcpp::List::create(
+        Rcpp::Named("numnet") = result.options.nnet.numnet,
+        Rcpp::Named("sizenet") = result.options.nnet.sizenet,
+        Rcpp::Named("lambda") = result.options.nnet.lambda,
+        Rcpp::Named("maxit") = result.options.nnet.maxit,
+        Rcpp::Named("rang") = result.options.nnet.rang,
+        Rcpp::Named("abstol") = result.options.nnet.abstol,
+        Rcpp::Named("reltol") = result.options.nnet.reltol,
+        Rcpp::Named("verbose") = result.options.nnet.verbose,
+        Rcpp::Named("skip") = result.options.nnet.skip
+    );
+
     Rcpp::List option_info = Rcpp::List::create(
         Rcpp::Named("tol") = result.options.tol,
         Rcpp::Named("method") = abcpp::method_name(result.options.method),
         Rcpp::Named("kernel") = abcpp::kernel_name(result.options.kernel),
         Rcpp::Named("hcorr") = result.options.hcorr,
-        Rcpp::Named("numnet") = result.options.numnet,
-        Rcpp::Named("sizenet") = result.options.sizenet,
-        Rcpp::Named("lambda") = result.options.lambda,
-        Rcpp::Named("maxit") = result.options.maxit,
         Rcpp::Named("seed") = static_cast<int>(result.options.seed),
+        Rcpp::Named("nnet") = nnet_info,
         Rcpp::Named("reduction") = reduction_info
     );
 
@@ -218,6 +237,11 @@ extern "C" SEXP _abcpp_abc(
     SEXP sizenet_sexp,
     SEXP lambda_sexp,
     SEXP maxit_sexp,
+    SEXP rang_sexp,
+    SEXP abstol_sexp,
+    SEXP reltol_sexp,
+    SEXP verbose_sexp,
+    SEXP skip_sexp,
     SEXP seed_sexp,
     SEXP reduction_sexp,
     SEXP n_comp_sexp
@@ -239,12 +263,17 @@ extern "C" SEXP _abcpp_abc(
         sizenet_sexp,
         lambda_sexp,
         maxit_sexp,
+        rang_sexp,
+        abstol_sexp,
+        reltol_sexp,
+        verbose_sexp,
+        skip_sexp,
         seed_sexp,
         reduction_sexp,
         n_comp_sexp
     );
 
-    const abcpp::AbcResult result = abcpp::abc(
+    const abcpp::AbcResult result = abcpp::fit(
         r_matrix_to_cpp(target),
         r_matrix_to_cpp(param),
         r_matrix_to_cpp(sumstat),
@@ -271,6 +300,11 @@ extern "C" SEXP _abcpp_abc_matrix_list(
     SEXP sizenet_sexp,
     SEXP lambda_sexp,
     SEXP maxit_sexp,
+    SEXP rang_sexp,
+    SEXP abstol_sexp,
+    SEXP reltol_sexp,
+    SEXP verbose_sexp,
+    SEXP skip_sexp,
     SEXP seed_sexp,
     SEXP reduction_sexp,
     SEXP n_comp_sexp
@@ -292,12 +326,17 @@ extern "C" SEXP _abcpp_abc_matrix_list(
         sizenet_sexp,
         lambda_sexp,
         maxit_sexp,
+        rang_sexp,
+        abstol_sexp,
+        reltol_sexp,
+        verbose_sexp,
+        skip_sexp,
         seed_sexp,
         reduction_sexp,
         n_comp_sexp
     );
 
-    const abcpp::AbcResult result = abcpp::abc(
+    const abcpp::AbcResult result = abcpp::fit(
         r_matrix_to_cpp(target),
         r_matrix_to_cpp(param),
         r_matrix_list_to_cpp(sumstats),
@@ -313,12 +352,12 @@ static const R_CallMethodDef CallEntries[] = {
     {
         "_abcpp_abc",
         reinterpret_cast<DL_FUNC>(&_abcpp_abc),
-        17
+        22
     },
     {
         "_abcpp_abc_matrix_list",
         reinterpret_cast<DL_FUNC>(&_abcpp_abc_matrix_list),
-        17
+        22
     },
     {nullptr, nullptr, 0}
 };

@@ -14,7 +14,7 @@ operations.
 
 ## Inputs
 
-Result objects are assembled by `abcpp::abc()` and summarized by
+Result objects are assembled by `abcpp::opt::run()` / `abcpp::fit()` and summarized by
 `abcpp::summary()`.
 
 ## Outputs

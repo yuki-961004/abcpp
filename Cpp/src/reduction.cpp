@@ -189,7 +189,7 @@ ReducedSummary reduce_pca(
     }
 
     ReductionInfo info;
-    info.method = ReductionMethod::PCA;
+    info.method = reduction_method::pca;
     info.n_comp = n_comp;
     info.rotation = components;
     info.center = centers;
@@ -346,7 +346,7 @@ ReducedSummary reduce_pls(
     }
 
     ReductionInfo info;
-    info.method = ReductionMethod::PLS;
+    info.method = reduction_method::pls;
     info.n_comp = n_comp;
     info.rotation = projection;
     info.center = x_centers;
@@ -362,9 +362,9 @@ ReducedSummary reduce_summary_statistics(
     const std::vector<double>& target,
     const ReductionOptions& options
 ) {
-    if (options.method == ReductionMethod::None) {
+    if (options.method == reduction_method::none) {
         ReductionInfo info;
-        info.method = ReductionMethod::None;
+        info.method = reduction_method::none;
         info.n_comp = sumstat.cols();
         return ReducedSummary{sumstat, target, info};
     }
@@ -377,10 +377,10 @@ ReducedSummary reduce_summary_statistics(
         ? std::min(sumstat.cols(), param.cols())
         : options.n_comp;
 
-    if (options.method == ReductionMethod::PCA) {
+    if (options.method == reduction_method::pca) {
         return reduce_pca(sumstat, target, n_comp);
     }
-    if (options.method == ReductionMethod::PLS) {
+    if (options.method == reduction_method::pls) {
         return reduce_pls(param, sumstat, target, n_comp);
     }
 

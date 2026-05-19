@@ -10,7 +10,7 @@ SummaryResult summary(
     double interval
 ) {
     const Matrix& values = (unadjusted ||
-        result.method == Method::Rejection ||
+        result.method == method::rejection ||
         result.adj_values.empty())
         ? result.unadj_values
         : result.adj_values;

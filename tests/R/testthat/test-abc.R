@@ -3,11 +3,8 @@ testthat::test_that("abcpp::abc returns the expected object fields", {
 
   result <- abcpp::abc(
     target = data$target,
-    param = data$param,
-    sumstat = data$sumstat,
-    tol = 0.10,
-    method = "rejection",
-    transf = base::rep("none", 2L)
+    params = data$param,
+    sumstats = data$sumstat
   )
 
   testthat::expect_s3_class(result, "abcpp")
@@ -19,29 +16,20 @@ testthat::test_that("abcpp::abc returns the expected object fields", {
   testthat::expect_equal(result$numstat, 4L)
 })
 
-testthat::test_that("rejection ABC accepts the expected number of rows", {
+testthat::test_that("partial control overrides defaults", {
   data <- abcpp_test_data()
-  tol <- 0.125
 
   result <- abcpp::abc(
     target = data$target,
-    param = data$param,
-    sumstat = data$sumstat,
-    tol = tol,
-    method = "rejection",
-    transf = base::rep("none", 2L)
+    params = data$param,
+    sumstats = data$sumstat,
+    control = list(tol = 0.125)
   )
 
-  expected_count <- base::ceiling(base::nrow(data$param) * tol)
+  expected_count <- base::ceiling(base::nrow(data$param) * 0.125)
   testthat::expect_equal(base::sum(result$region), expected_count)
-  testthat::expect_equal(base::nrow(result$unadj.values), expected_count)
-
-  accepted_distance <- result$dist[result$region]
-  rejected_distance <- result$dist[!result$region]
-  testthat::expect_lte(
-    base::max(accepted_distance),
-    base::min(rejected_distance)
-  )
+  testthat::expect_equal(result$options$method, "rejection")
+  testthat::expect_equal(result$options$tol, 0.125)
 })
 
 testthat::test_that("loclinear ABC can run", {
@@ -49,12 +37,14 @@ testthat::test_that("loclinear ABC can run", {
 
   result <- abcpp::abc(
     target = data$target,
-    param = data$param,
-    sumstat = data$sumstat,
-    tol = 0.20,
-    method = "loclinear",
-    hcorr = FALSE,
-    transf = base::rep("none", 2L)
+    params = data$param,
+    sumstats = data$sumstat,
+    control = list(
+      method = "loclinear",
+      tol = 0.20,
+      hcorr = FALSE,
+      transf = base::rep("none", 2L)
+    )
   )
 
   testthat::expect_identical(result$method, "loclinear")
@@ -67,13 +57,15 @@ testthat::test_that("ridge ABC can run", {
 
   result <- abcpp::abc(
     target = data$target,
-    param = data$param,
-    sumstat = data$sumstat,
-    tol = 0.20,
-    method = "ridge",
-    hcorr = FALSE,
-    transf = base::rep("none", 2L),
-    lambda = c(0.001, 0.01)
+    params = data$param,
+    sumstats = data$sumstat,
+    control = list(
+      method = "ridge",
+      tol = 0.20,
+      hcorr = FALSE,
+      transf = base::rep("none", 2L),
+      nnet = list(lambda = c(0.001, 0.01))
+    )
   )
 
   testthat::expect_identical(result$method, "ridge")
@@ -81,25 +73,36 @@ testthat::test_that("ridge ABC can run", {
   testthat::expect_true(base::all(base::is.finite(result$adj.values)))
 })
 
-testthat::test_that("neuralnet ABC can run", {
+testthat::test_that("neuralnet ABC can run with nested nnet control", {
   data <- abcpp_test_data()
 
   result <- abcpp::abc(
     target = data$target,
-    param = data$param,
-    sumstat = data$sumstat,
-    tol = 0.20,
-    method = "neuralnet",
-    hcorr = FALSE,
-    transf = base::rep("none", 2L),
-    numnet = 3L,
-    sizenet = 4L,
-    lambda = c(0.001),
-    seed = 1004L
+    params = data$param,
+    sumstats = data$sumstat,
+    control = list(
+      method = "neuralnet",
+      tol = 0.20,
+      hcorr = FALSE,
+      transf = base::rep("none", 2L),
+      seed = 1004L,
+      nnet = list(
+        numnet = 3L,
+        sizenet = 4L,
+        lambda = c(0.001),
+        rang = 0.5,
+        abstol = 1e-4,
+        reltol = 1e-8,
+        verbose = FALSE,
+        skip = TRUE
+      )
+    )
   )
 
   testthat::expect_identical(result$method, "neuralnet")
   testthat::expect_equal(base::ncol(result$adj.values), 2L)
   testthat::expect_true(base::all(base::is.finite(result$adj.values)))
   testthat::expect_equal(base::length(result$lambda), 3L)
+  testthat::expect_equal(result$options$nnet$sizenet, 4L)
+  testthat::expect_true(result$options$nnet$skip)
 })

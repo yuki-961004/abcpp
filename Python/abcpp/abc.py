@@ -1,6 +1,61 @@
+from copy import deepcopy
+
 import numpy
 
 from . import _core
+
+
+DEFAULT_CONTROL = {
+    "method": "rejection",
+    "tol": 0.01,
+    "kernel": "epanechnikov",
+    "hcorr": True,
+    "transf": "none",
+    "logit_bounds": None,
+    "subset": None,
+    "seed": 1004,
+    "reduction": "none",
+    "n_comp": 0,
+    "nnet": {
+        "numnet": 10,
+        "sizenet": 5,
+        "lambda": [0.0001, 0.001, 0.01],
+        "maxit": 500,
+        "rang": 0.7,
+        "abstol": 1e-4,
+        "reltol": 1e-8,
+        "verbose": False,
+        "skip": False,
+    },
+}
+
+
+def _nested_merge(defaults, overrides):
+    merged = deepcopy(defaults)
+    for key, value in overrides.items():
+        if (
+            isinstance(value, dict)
+            and isinstance(merged.get(key), dict)
+        ):
+            merged[key] = _nested_merge(merged[key], value)
+        else:
+            merged[key] = value
+    return merged
+
+
+def _prepare_control(control):
+    if control is None:
+        control = {}
+    if not isinstance(control, dict):
+        raise TypeError("control must be a dict or None")
+    merged = _nested_merge(DEFAULT_CONTROL, control)
+    if isinstance(merged["transf"], str):
+        merged["transf"] = [merged["transf"]]
+    if merged["logit_bounds"] is None:
+        merged["logit_bounds"] = numpy.zeros((1, 2), dtype=float)
+    if merged["subset"] is None:
+        merged["subset"] = numpy.asarray([], dtype=bool)
+    return merged
 
 
 def _is_matrix_like(value):
@@ -10,30 +65,13 @@ def _is_matrix_like(value):
         return False
 
 
-def abc(
-    target,
-    param,
-    sumstat,
-    tol,
-    method,
-    hcorr=True,
-    transf="none",
-    logit_bounds=None,
-    subset=None,
-    kernel="epanechnikov",
-    numnet=10,
-    sizenet=5,
-    lambda_values=None,
-    maxit=500,
-    reduction=None,
-    n_comp=None,
-    seed=1004,
-):
+def abc(target, params, sumstats, control=None):
     """Run Approximate Bayesian Computation with the C++ backend."""
+    control = _prepare_control(control)
     target_array = numpy.asarray(target, dtype=float)
-    param_array = numpy.asarray(param, dtype=float)
-    sumstat_is_mapping = isinstance(sumstat, dict)
-    sumstat_items = list(sumstat.values()) if sumstat_is_mapping else sumstat
+    param_array = numpy.asarray(params, dtype=float)
+    sumstat_is_mapping = isinstance(sumstats, dict)
+    sumstat_items = list(sumstats.values()) if sumstat_is_mapping else sumstats
     sumstat_is_matrix_collection = (
         isinstance(sumstat_items, (list, tuple))
         and len(sumstat_items) > 0
@@ -45,7 +83,7 @@ def abc(
             for item in sumstat_items
         ]
     else:
-        sumstat_value = numpy.asarray(sumstat, dtype=float)
+        sumstat_value = numpy.asarray(sumstats, dtype=float)
 
     if target_array.ndim == 1:
         target_array = target_array.reshape((1, -1))
@@ -55,8 +93,7 @@ def abc(
         sumstat_value = sumstat_value.reshape((-1, 1))
     if (
         not sumstat_is_matrix_collection
-        and
-        param_array.ndim == 2
+        and param_array.ndim == 2
         and sumstat_value.ndim == 2
         and param_array.shape[0] == 1
         and param_array.shape[1] == sumstat_value.shape[0]
@@ -64,42 +101,12 @@ def abc(
     ):
         param_array = param_array.T
 
-    if logit_bounds is None:
-        logit_bounds = numpy.zeros((1, 2), dtype=float)
-    if subset is None:
-        subset = numpy.asarray([], dtype=bool)
-    if lambda_values is None:
-        lambda_values = numpy.asarray([0.0001, 0.001, 0.01], dtype=float)
-    if isinstance(transf, str):
-        transf = [transf]
-    if reduction is None:
-        reduction = "none"
-    if n_comp is None:
-        n_comp = 0
-
-    common_args = dict(
-        target=target_array,
-        param=param_array,
-        tol=float(tol),
-        method=str(method),
-        hcorr=bool(hcorr),
-        transf=list(transf),
-        logit_bounds=numpy.asarray(logit_bounds, dtype=float),
-        subset=numpy.asarray(subset, dtype=bool),
-        kernel=str(kernel),
-        numnet=int(numnet),
-        sizenet=int(sizenet),
-        lambda_values=numpy.asarray(lambda_values, dtype=float),
-        maxit=int(maxit),
-        reduction=str(reduction),
-        n_comp=int(n_comp),
-        seed=int(seed),
-    )
-
     if sumstat_is_matrix_collection:
         return _core.abc_matrix_list(
-            sumstats=[numpy.asarray(item, dtype=float) for item in sumstat_value],
-            **common_args,
+            target_array,
+            param_array,
+            [numpy.asarray(item, dtype=float) for item in sumstat_value],
+            control,
         )
 
-    return _core.abc(sumstat=sumstat_value, **common_args)
+    return _core.abc(target_array, param_array, sumstat_value, control)

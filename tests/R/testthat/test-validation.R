@@ -4,10 +4,9 @@ testthat::test_that("dimension mismatch raises an error", {
   testthat::expect_error(
     abcpp::abc(
       target = data$target[-1L],
-      param = data$param,
-      sumstat = data$sumstat,
-      tol = 0.10,
-      method = "rejection"
+      params = data$param,
+      sumstats = data$sumstat,
+      control = list(tol = 0.10)
     ),
     "target summary dimension"
   )
@@ -15,10 +14,9 @@ testthat::test_that("dimension mismatch raises an error", {
   testthat::expect_error(
     abcpp::abc(
       target = data$target,
-      param = data$param[-1L, ],
-      sumstat = data$sumstat,
-      tol = 0.10,
-      method = "rejection"
+      params = data$param[-1L, ],
+      sumstats = data$sumstat,
+      control = list(tol = 0.10)
     ),
     "param.rows"
   )
@@ -30,10 +28,9 @@ testthat::test_that("invalid method and reduction raise errors", {
   testthat::expect_error(
     abcpp::abc(
       target = data$target,
-      param = data$param,
-      sumstat = data$sumstat,
-      tol = 0.10,
-      method = "bad_method"
+      params = data$param,
+      sumstats = data$sumstat,
+      control = list(tol = 0.10, method = "bad_method")
     ),
     "Unknown ABC method"
   )
@@ -41,11 +38,9 @@ testthat::test_that("invalid method and reduction raise errors", {
   testthat::expect_error(
     abcpp::abc(
       target = data$target,
-      param = data$param,
-      sumstat = data$sumstat,
-      tol = 0.10,
-      method = "rejection",
-      reduction = "bad_reduction"
+      params = data$param,
+      sumstats = data$sumstat,
+      control = list(tol = 0.10, reduction = "bad_reduction")
     ),
     "Unknown summary reduction"
   )
@@ -57,10 +52,9 @@ testthat::test_that("invalid tolerance raises an error", {
   testthat::expect_error(
     abcpp::abc(
       target = data$target,
-      param = data$param,
-      sumstat = data$sumstat,
-      tol = 0,
-      method = "rejection"
+      params = data$param,
+      sumstats = data$sumstat,
+      control = list(tol = 0)
     ),
     "tol must be"
   )
@@ -73,12 +67,13 @@ testthat::test_that("subset changes accepted rows consistently", {
 
   result <- abcpp::abc(
     target = data$target,
-    param = data$param,
-    sumstat = data$sumstat,
-    tol = 0.10,
-    method = "rejection",
-    transf = base::rep("none", 2L),
-    subset = subset
+    params = data$param,
+    sumstats = data$sumstat,
+    control = list(
+      tol = 0.10,
+      transf = base::rep("none", 2L),
+      subset = subset
+    )
   )
 
   testthat::expect_true(base::all(!result$region[!subset]))
@@ -92,11 +87,9 @@ testthat::test_that("matrix target and stacked summary statistics work", {
 
   result_none <- abcpp::abc(
     target = target_matrix,
-    param = data$param,
-    sumstat = sumstat_matrix,
-    tol = 0.10,
-    method = "rejection",
-    reduction = "none"
+    params = data$param,
+    sumstats = sumstat_matrix,
+    control = list(tol = 0.10, reduction = "none")
   )
 
   testthat::expect_equal(result_none$numstat, 2L)
@@ -109,13 +102,15 @@ testthat::test_that("matrix target and stacked summary statistics work", {
 
   result_pls <- abcpp::abc(
     target = target_stacked,
-    param = data$param,
-    sumstat = stacked_sumstat,
-    tol = 0.30,
-    method = "loclinear",
-    hcorr = FALSE,
-    reduction = "pls",
-    n_comp = 1L
+    params = data$param,
+    sumstats = stacked_sumstat,
+    control = list(
+      method = "loclinear",
+      tol = 0.30,
+      hcorr = FALSE,
+      reduction = "pls",
+      n_comp = 1L
+    )
   )
 
   testthat::expect_equal(result_pls$numstat, 1L)
@@ -139,11 +134,9 @@ testthat::test_that("matrix target and list summary statistics work", {
 
   result <- abcpp::abc(
     target = target,
-    param = param,
-    sumstat = sumstats,
-    tol = 0.40,
-    method = "rejection",
-    reduction = "none"
+    params = param,
+    sumstats = sumstats,
+    control = list(tol = 0.40, reduction = "none")
   )
 
   testthat::expect_equal(result$numstat, 4L)
@@ -158,10 +151,9 @@ testthat::test_that("one-row parameter matrix is treated as one parameter", {
 
   result <- abcpp::abc(
     target = data$target,
-    param = param_row,
-    sumstat = data$sumstat,
-    tol = 0.10,
-    method = "rejection"
+    params = param_row,
+    sumstats = data$sumstat,
+    control = list(tol = 0.10)
   )
 
   testthat::expect_equal(result$numparam, 1L)

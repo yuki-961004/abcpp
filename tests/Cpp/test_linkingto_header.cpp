@@ -15,10 +15,10 @@ int main() {
         }
 
         abcpp::AbcOptions options;
-        options.method = abcpp::Method::Rejection;
+        options.method = abcpp::method::rejection;
         options.tol = 0.5;
 
-        const abcpp::AbcResult fit = abcpp::abc(
+        const abcpp::AbcResult fit = abcpp::fit(
             std::vector<double>{1.1},
             param,
             sumstat,

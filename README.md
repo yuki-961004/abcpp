@@ -9,10 +9,9 @@
 [![Python](https://img.shields.io/badge/python-%3E%3D3.10-3776AB.svg)](Python/pyproject.toml)
 <!-- badges: end -->
 
-`abcpp` is a C++ implementation based on the `cran/abc` package. It builds upon the original version with two major improvements:
-
-1. `target` and `sumstat` can accept matrix inputs (`sumstat` can also accept a `list` or `dict` where each element is a matrix).
-2. Dimensionality reduction can be applied to the input matrices by setting the `reduction` parameter (defaults to `"none"`). Available reduction methods are `"pca"` and `"pls"`.
+`abcpp` is a lightweight embeddable C++ library for Approximate Bayesian
+Computation, with R and Python wrappers. The C++ library is the only algorithm
+implementation; R and Python are thin frontends.
 
 ## C++ Usage
 
@@ -30,7 +29,23 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(abcpp)
 
-target_link_libraries(my_target PRIVATE abcpp::abc)
+target_link_libraries(my_target PRIVATE abcpp::abcpp)
+```
+
+The primary C++ API is NLopt-like:
+
+```cpp
+#include <abcpp/abcpp.hpp>
+
+abcpp::opt opt;
+abcpp::result fit = opt
+    .set_target(target)
+    .set_params(params)
+    .set_sumstats(sumstats)
+    .set_method(abcpp::method::neuralnet)
+    .set_tol(0.01)
+    .set_nnet_sizenet(8)
+    .run();
 ```
 
 ## R Usage
@@ -41,19 +56,20 @@ Install from CRAN:
 install.packages("abcpp")
 ```
 
-Usage is the same as the standard `abc` package, with the addition of the `reduction` and `n_comp` arguments:
+The R interface uses four inputs: `target`, `params`, `sumstats`, and
+`control`.
 
 ```r
 library(abcpp)
 
 result <- abcpp::abc(
   target = <target_summary_vector_or_matrix>,
-  param = <parameter_vector_or_matrix>,
-  sumstat = <simulated_summary_vector_or_matrix>,
-  tol = <tolerance_between_0_and_1>,
-  method = "rejection",
-  reduction = "none",
-  n_comp = <number_of_components_if_needed>
+  params = <parameter_vector_or_matrix>,
+  sumstats = <simulated_summary_vector_or_matrix>,
+  control = list(
+    method = "rejection",
+    tol = <tolerance_between_0_and_1>
+  )
 )
 
 summary(result)
@@ -67,19 +83,19 @@ Install from PyPI:
 pip install abcpp
 ```
 
-Usage is similar to the R interface:
+The Python interface mirrors the R interface:
 
 ```python
 import abcpp
 
 result = abcpp.abc(
     target=<target_summary_vector_or_matrix>,
-    param=<parameter_vector_or_matrix>,
-    sumstat=<simulated_summary_vector_or_matrix>,
-    tol=<tolerance_between_0_and_1>,
-    method="rejection",
-    reduction="none",
-    n_comp=<number_of_components_if_needed>,
+    params=<parameter_vector_or_matrix>,
+    sumstats=<simulated_summary_vector_or_matrix>,
+    control={
+        "method": "rejection",
+        "tol": <tolerance_between_0_and_1>,
+    },
 )
 
 abcpp.summary(result)

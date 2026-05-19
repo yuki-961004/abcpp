@@ -7,7 +7,7 @@ and returns their parameter values without regression adjustment.
 
 ## Main Functions And Classes
 
-- `abcpp::abc()`
+- `abcpp::opt::run()` / `abcpp::fit()`
 - Internal distance, region-selection, and accepted-matrix helpers in
   `Cpp/src/abc.cpp`
 

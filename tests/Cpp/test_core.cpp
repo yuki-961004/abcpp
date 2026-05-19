@@ -56,7 +56,7 @@ abcpp::Matrix make_param_matrix(std::size_t rows, std::size_t cols) {
         const double x = static_cast<double>(row + 1) /
             static_cast<double>(rows + 2);
         for (std::size_t col = 0; col < cols; ++col) {
-            // 涓枃璇存槑: 姣忎竴鍒椾娇鐢ㄤ笉鍚屾枩�? 闃叉鍥炲綊娴嬭瘯閫€鍖栨垚甯告暟鍒?
+            // Developer note.
             param(row, col) = 0.15 + x * static_cast<double>(col + 1);
         }
     }
@@ -68,7 +68,7 @@ abcpp::Matrix make_sumstat_matrix(std::size_t rows, std::size_t cols) {
     for (std::size_t row = 0; row < rows; ++row) {
         const double x = static_cast<double>(row + 1) / 11.0;
         for (std::size_t col = 0; col < cols; ++col) {
-            // 涓枃璇存槑: 姝ｅ鸡鍜岀嚎鎬ч」娣峰悎, �?PCA, PLS, 鍥炲綊閮芥湁鐪熷疄淇″彿.
+            // Developer note.
             sumstat(row, col) = std::sin(x + static_cast<double>(col)) +
                 0.03 * static_cast<double>(row * (col + 1));
         }
@@ -95,11 +95,11 @@ void test_minimal_cpp_smoke() {
     }
 
     abcpp::AbcOptions options;
-    options.method = abcpp::Method::Rejection;
+    options.method = abcpp::method::rejection;
     options.tol = 0.5;
-    options.reduction.method = abcpp::ReductionMethod::None;
+    options.reduction.method = abcpp::reduction_method::none;
 
-    const abcpp::AbcResult fit = abcpp::abc(
+    const abcpp::AbcResult fit = abcpp::fit(
         std::vector<double>{2.1, 1.05},
         param,
         sumstat,
@@ -135,11 +135,11 @@ void test_matrix_sumstat_list_flattens() {
     target(1, 1) = 2.3;
 
     abcpp::AbcOptions options;
-    options.method = abcpp::Method::Rejection;
+    options.method = abcpp::method::rejection;
     options.tol = 0.4;
-    options.reduction.method = abcpp::ReductionMethod::None;
+    options.reduction.method = abcpp::reduction_method::none;
 
-    const abcpp::AbcResult result = abcpp::abc(
+    const abcpp::AbcResult result = abcpp::fit(
         target,
         param,
         sumstats,
@@ -407,10 +407,10 @@ void test_rejection_accepts_expected_rows() {
     }
 
     abcpp::AbcOptions options;
-    options.method = abcpp::Method::Rejection;
+    options.method = abcpp::method::rejection;
     options.tol = 0.4;
 
-    const abcpp::AbcResult result = abcpp::abc(
+    const abcpp::AbcResult result = abcpp::fit(
         std::vector<double>{1.1},
         param,
         sumstat,
@@ -429,6 +429,34 @@ void test_rejection_accepts_expected_rows() {
     require_true(result.numstat == 1, "result statistic count");
 }
 
+void test_object_api_supports_chaining() {
+    abcpp::Matrix target(1, 1);
+    abcpp::Matrix params(5, 1);
+    abcpp::Matrix sumstats(5, 1);
+    target(0, 0) = 1.1;
+    for (std::size_t row = 0; row < 5; ++row) {
+        params(row, 0) = static_cast<double>(row + 1);
+        sumstats(row, 0) = static_cast<double>(row);
+    }
+
+    abcpp::opt opt;
+    const abcpp::result fit = opt
+        .set_target(target)
+        .set_params(params)
+        .set_sumstats(sumstats)
+        .set_method(abcpp::method::rejection)
+        .set_kernel(abcpp::kernel::epanechnikov)
+        .set_hcorr(true)
+        .set_seed(1004)
+        .set_tol(0.4)
+        .run();
+
+    require_true(fit.status == "ok", "object api status");
+    require_true(fit.unadj_values.rows() == 2, "object api rows");
+    require_true(fit.options.method == abcpp::method::rejection,
+                 "object api options method");
+}
+
 void test_loclinear_runs_and_summarizes() {
     const std::size_t n = 80;
     abcpp::Matrix param(n, 2);
@@ -444,11 +472,11 @@ void test_loclinear_runs_and_summarizes() {
     }
 
     abcpp::AbcOptions options;
-    options.method = abcpp::Method::LocLinear;
+    options.method = abcpp::method::loclinear;
     options.tol = 0.35;
     options.hcorr = false;
 
-    const abcpp::AbcResult result = abcpp::abc(
+    const abcpp::AbcResult result = abcpp::fit(
         std::vector<double>{3.1, std::sin(3.1), std::cos(3.1)},
         param,
         sumstat,
@@ -490,13 +518,13 @@ void test_reductions_keep_requested_dimension() {
     }
 
     abcpp::AbcOptions options;
-    options.method = abcpp::Method::Ridge;
+    options.method = abcpp::method::ridge;
     options.tol = 0.5;
     options.hcorr = false;
-    options.reduction.method = abcpp::ReductionMethod::PCA;
+    options.reduction.method = abcpp::reduction_method::pca;
     options.reduction.n_comp = 2;
 
-    const abcpp::AbcResult pca_result = abcpp::abc(
+    const abcpp::AbcResult pca_result = abcpp::fit(
         std::vector<double>{
             std::sin(1.0),
             std::sin(2.0),
@@ -510,13 +538,13 @@ void test_reductions_keep_requested_dimension() {
     );
 
     require_true(pca_result.numstat == 2, "pca dimension");
-    require_true(pca_result.reduction.method == abcpp::ReductionMethod::PCA,
+    require_true(pca_result.reduction.method == abcpp::reduction_method::pca,
                  "pca method stored");
     require_true(pca_result.reduction.rotation.cols() == 2,
                  "pca rotation dimension");
 
-    options.reduction.method = abcpp::ReductionMethod::PLS;
-    const abcpp::AbcResult pls_result = abcpp::abc(
+    options.reduction.method = abcpp::reduction_method::pls;
+    const abcpp::AbcResult pls_result = abcpp::fit(
         std::vector<double>{
             std::sin(1.0),
             std::sin(2.0),
@@ -530,12 +558,12 @@ void test_reductions_keep_requested_dimension() {
     );
 
     require_true(pls_result.numstat == 2, "pls dimension");
-    require_true(pls_result.reduction.method == abcpp::ReductionMethod::PLS,
+    require_true(pls_result.reduction.method == abcpp::reduction_method::pls,
                  "pls method stored");
     require_true(pls_result.reduction.rotation.cols() == 2,
                  "pls rotation dimension");
 
-    options.reduction.method = abcpp::ReductionMethod::None;
+    options.reduction.method = abcpp::reduction_method::none;
     const abcpp::ReducedSummary none = abcpp::reduce_summary_statistics(
         param,
         sumstat,
@@ -544,7 +572,7 @@ void test_reductions_keep_requested_dimension() {
     );
     require_true(none.sumstat.cols() == 5, "none reduction keeps columns");
 
-    options.reduction.method = abcpp::ReductionMethod::PCA;
+    options.reduction.method = abcpp::reduction_method::pca;
     options.reduction.n_comp = 100;
     const abcpp::ReducedSummary clipped = abcpp::reduce_summary_statistics(
         param,
@@ -578,12 +606,12 @@ void test_reduction_none_and_pls_contracts() {
     const std::vector<double> target = make_target_from_row(sumstat, 20);
 
     abcpp::AbcOptions options;
-    options.method = abcpp::Method::LocLinear;
+    options.method = abcpp::method::loclinear;
     options.tol = 0.35;
     options.hcorr = false;
 
-    options.reduction.method = abcpp::ReductionMethod::None;
-    const abcpp::AbcResult none_result = abcpp::abc(
+    options.reduction.method = abcpp::reduction_method::none;
+    const abcpp::AbcResult none_result = abcpp::fit(
         target,
         param,
         sumstat,
@@ -591,7 +619,7 @@ void test_reduction_none_and_pls_contracts() {
     );
 
     require_true(none_result.numstat == 4, "none abc keeps dimension");
-    require_true(none_result.reduction.method == abcpp::ReductionMethod::None,
+    require_true(none_result.reduction.method == abcpp::reduction_method::none,
                  "none abc stores method");
     require_true(none_result.reduction.n_comp == 4,
                  "none abc stores component count");
@@ -601,7 +629,7 @@ void test_reduction_none_and_pls_contracts() {
                  "none abc has empty center");
 
     abcpp::ReductionOptions none_options;
-    none_options.method = abcpp::ReductionMethod::None;
+    none_options.method = abcpp::reduction_method::none;
     const abcpp::ReducedSummary none_reduced =
         abcpp::reduce_summary_statistics(
             param,
@@ -620,13 +648,13 @@ void test_reduction_none_and_pls_contracts() {
                  "none direct keeps values");
     require_near(none_reduced.target[2], target[2], 1e-12,
                  "none direct keeps target values");
-    require_true(none_reduced.info.method == abcpp::ReductionMethod::None,
+    require_true(none_reduced.info.method == abcpp::reduction_method::none,
                  "none direct stores method");
     require_true(none_reduced.info.n_comp == sumstat.cols(),
                  "none direct stores component count");
 
     abcpp::ReductionOptions pls_options;
-    pls_options.method = abcpp::ReductionMethod::PLS;
+    pls_options.method = abcpp::reduction_method::pls;
     pls_options.n_comp = 2;
     const abcpp::ReducedSummary pls_reduced =
         abcpp::reduce_summary_statistics(
@@ -642,7 +670,7 @@ void test_reduction_none_and_pls_contracts() {
                  "pls direct reduces columns");
     require_true(pls_reduced.target.size() == 2,
                  "pls direct reduces target");
-    require_true(pls_reduced.info.method == abcpp::ReductionMethod::PLS,
+    require_true(pls_reduced.info.method == abcpp::reduction_method::pls,
                  "pls direct stores method");
     require_true(pls_reduced.info.n_comp == 2,
                  "pls direct stores component count");
@@ -655,9 +683,9 @@ void test_reduction_none_and_pls_contracts() {
     require_finite(pls_reduced.sumstat(0, 0), "pls direct finite score");
     require_finite(pls_reduced.target[0], "pls direct finite target");
 
-    options.reduction.method = abcpp::ReductionMethod::PLS;
+    options.reduction.method = abcpp::reduction_method::pls;
     options.reduction.n_comp = 2;
-    const abcpp::AbcResult pls_result = abcpp::abc(
+    const abcpp::AbcResult pls_result = abcpp::fit(
         target,
         param,
         sumstat,
@@ -665,7 +693,7 @@ void test_reduction_none_and_pls_contracts() {
     );
 
     require_true(pls_result.numstat == 2, "pls abc reduces dimension");
-    require_true(pls_result.reduction.method == abcpp::ReductionMethod::PLS,
+    require_true(pls_result.reduction.method == abcpp::reduction_method::pls,
                  "pls abc stores method");
     require_true(pls_result.reduction.n_comp == 2,
                  "pls abc stores component count");
@@ -703,11 +731,11 @@ void test_matrix_target_and_stacked_sumstat_inputs() {
     target(1, 1) = stacked_sumstat(10 * 2 + 1, 1);
 
     abcpp::AbcOptions options;
-    options.method = abcpp::Method::Rejection;
+    options.method = abcpp::method::rejection;
     options.tol = 0.25;
-    options.reduction.method = abcpp::ReductionMethod::None;
+    options.reduction.method = abcpp::reduction_method::none;
 
-    const abcpp::AbcResult none_result = abcpp::abc(
+    const abcpp::AbcResult none_result = abcpp::fit(
         target,
         param,
         stacked_sumstat,
@@ -719,12 +747,12 @@ void test_matrix_target_and_stacked_sumstat_inputs() {
     require_true(none_result.unadj_values.rows() > 0,
                  "matrix target none accepted rows");
 
-    options.method = abcpp::Method::LocLinear;
+    options.method = abcpp::method::loclinear;
     options.hcorr = false;
-    options.reduction.method = abcpp::ReductionMethod::PLS;
+    options.reduction.method = abcpp::reduction_method::pls;
     options.reduction.n_comp = 2;
 
-    const abcpp::AbcResult pls_result = abcpp::abc(
+    const abcpp::AbcResult pls_result = abcpp::fit(
         target,
         param,
         stacked_sumstat,
@@ -733,7 +761,7 @@ void test_matrix_target_and_stacked_sumstat_inputs() {
 
     require_true(pls_result.numstat == 2,
                  "matrix target pls reduced dimension");
-    require_true(pls_result.reduction.method == abcpp::ReductionMethod::PLS,
+    require_true(pls_result.reduction.method == abcpp::reduction_method::pls,
                  "matrix target pls method");
     require_true(pls_result.adj_values.rows() > 0,
                  "matrix target pls adjusted rows");
@@ -751,7 +779,7 @@ void test_invalid_inputs() {
     require_throws<std::invalid_argument>(
         [&param, &options]() {
             abcpp::Matrix wrong_sumstat(4, 1);
-            abcpp::abc(std::vector<double>{1.0}, param, wrong_sumstat,
+            abcpp::fit(std::vector<double>{1.0}, param, wrong_sumstat,
                        options);
         },
         "mismatch rows should throw"
@@ -759,7 +787,7 @@ void test_invalid_inputs() {
 
     require_throws<std::invalid_argument>(
         [&param, &sumstat, &options]() {
-            abcpp::abc(std::vector<double>{1.0, 2.0}, param, sumstat,
+            abcpp::fit(std::vector<double>{1.0, 2.0}, param, sumstat,
                        options);
         },
         "mismatch cols should throw"
@@ -769,7 +797,7 @@ void test_invalid_inputs() {
         [&param, &sumstat, &options]() {
             abcpp::AbcOptions local = options;
             local.tol = 1.5;
-            abcpp::abc(std::vector<double>{1.0}, param, sumstat, local);
+            abcpp::fit(std::vector<double>{1.0}, param, sumstat, local);
         },
         "tol greater than one should throw"
     );
@@ -778,7 +806,7 @@ void test_invalid_inputs() {
         [&param, &sumstat, &options]() {
             abcpp::AbcOptions local = options;
             local.tol = 0.0;
-            abcpp::abc(std::vector<double>{1.0}, param, sumstat, local);
+            abcpp::fit(std::vector<double>{1.0}, param, sumstat, local);
         },
         "zero tolerance should throw"
     );
@@ -787,7 +815,7 @@ void test_invalid_inputs() {
         [&param, &sumstat, &options]() {
             abcpp::AbcOptions local = options;
             local.subset = std::vector<bool>{true, false};
-            abcpp::abc(std::vector<double>{1.0}, param, sumstat, local);
+            abcpp::fit(std::vector<double>{1.0}, param, sumstat, local);
         },
         "subset wrong length should throw"
     );
@@ -795,8 +823,8 @@ void test_invalid_inputs() {
     require_throws<std::invalid_argument>(
         [&param, &sumstat, &options]() {
             abcpp::AbcOptions local = options;
-            local.lambda.clear();
-            abcpp::abc(std::vector<double>{1.0}, param, sumstat, local);
+            local.nnet.lambda.clear();
+            abcpp::fit(std::vector<double>{1.0}, param, sumstat, local);
         },
         "empty lambda should throw"
     );
@@ -806,7 +834,7 @@ void test_invalid_inputs() {
             abcpp::AbcOptions local = options;
             local.subset = std::vector<bool>{false, false, false, false,
                                              false};
-            abcpp::abc(std::vector<double>{1.0}, param, sumstat, local);
+            abcpp::fit(std::vector<double>{1.0}, param, sumstat, local);
         },
         "no valid row should throw"
     );
@@ -816,9 +844,9 @@ void test_invalid_inputs() {
             abcpp::Matrix local_param(5, 1, 1.0);
             abcpp::Matrix local_sumstat(5, 1, 2.0);
             abcpp::AbcOptions local = options;
-            local.method = abcpp::Method::LocLinear;
+            local.method = abcpp::method::loclinear;
             local.tol = 1.0;
-            abcpp::abc(std::vector<double>{2.0}, local_param, local_sumstat,
+            abcpp::fit(std::vector<double>{2.0}, local_param, local_sumstat,
                        local);
         },
         "zero accepted variance should throw"
@@ -829,11 +857,11 @@ void test_invalid_inputs() {
             abcpp::Matrix local_param(5, 2, 1.0);
             abcpp::Matrix local_sumstat(5, 1, 1.0);
             abcpp::AbcOptions local;
-            local.method = abcpp::Method::LocLinear;
-            local.transformations = {abcpp::Transform::Log,
-                                     abcpp::Transform::Logit,
-                                     abcpp::Transform::None};
-            abcpp::abc(std::vector<double>{1.0}, local_param, local_sumstat,
+            local.method = abcpp::method::loclinear;
+            local.transformations = {abcpp::transform::log,
+                                     abcpp::transform::logit,
+                                     abcpp::transform::none};
+            abcpp::fit(std::vector<double>{1.0}, local_param, local_sumstat,
                        local);
         },
         "transform count mismatch should throw"
@@ -844,9 +872,9 @@ void test_invalid_inputs() {
             abcpp::Matrix local_param(5, 1, 0.5);
             abcpp::Matrix local_sumstat(5, 1, 1.0);
             abcpp::AbcOptions local;
-            local.method = abcpp::Method::LocLinear;
-            local.transformations = {abcpp::Transform::Logit};
-            abcpp::abc(std::vector<double>{1.0}, local_param, local_sumstat,
+            local.method = abcpp::method::loclinear;
+            local.transformations = {abcpp::transform::logit};
+            abcpp::fit(std::vector<double>{1.0}, local_param, local_sumstat,
                        local);
         },
         "missing logit bounds should throw"
@@ -857,14 +885,14 @@ void test_invalid_inputs() {
             abcpp::Matrix local_param(5, 1, 0.5);
             abcpp::Matrix local_sumstat(5, 1, 1.0);
             abcpp::AbcOptions local;
-            local.method = abcpp::Method::LocLinear;
-            local.transformations = {abcpp::Transform::Logit};
+            local.method = abcpp::method::loclinear;
+            local.transformations = {abcpp::transform::logit};
             local.logit_bounds = abcpp::from_row_major(
                 std::vector<double>{1.0, 0.0},
                 1,
                 2
             );
-            abcpp::abc(std::vector<double>{1.0}, local_param, local_sumstat,
+            abcpp::fit(std::vector<double>{1.0}, local_param, local_sumstat,
                        local);
         },
         "invalid logit bounds should throw"
@@ -877,50 +905,50 @@ void test_options_parsing() {
      * ========================= */
 
     require_true(abcpp::parse_method("Rejection") ==
-                 abcpp::Method::Rejection, "parse rejection");
+                 abcpp::method::rejection, "parse rejection");
     require_true(abcpp::parse_method("loclinear") ==
-                 abcpp::Method::LocLinear, "parse loclinear");
+                 abcpp::method::loclinear, "parse loclinear");
     require_true(abcpp::parse_method("ridge") ==
-                 abcpp::Method::Ridge, "parse ridge");
+                 abcpp::method::ridge, "parse ridge");
     require_true(abcpp::parse_method("neuralnet") ==
-                 abcpp::Method::NeuralNet, "parse neuralnet");
+                 abcpp::method::neuralnet, "parse neuralnet");
 
     require_true(abcpp::parse_kernel("gaussian") ==
-                 abcpp::Kernel::Gaussian, "parse gaussian");
+                 abcpp::kernel::gaussian, "parse gaussian");
     require_true(abcpp::parse_kernel("epanechnikov") ==
-                 abcpp::Kernel::Epanechnikov, "parse epanechnikov");
+                 abcpp::kernel::epanechnikov, "parse epanechnikov");
     require_true(abcpp::parse_kernel("rectangular") ==
-                 abcpp::Kernel::Rectangular, "parse rectangular");
+                 abcpp::kernel::rectangular, "parse rectangular");
     require_true(abcpp::parse_kernel("triangular") ==
-                 abcpp::Kernel::Triangular, "parse triangular");
+                 abcpp::kernel::triangular, "parse triangular");
     require_true(abcpp::parse_kernel("biweight") ==
-                 abcpp::Kernel::Biweight, "parse biweight");
+                 abcpp::kernel::biweight, "parse biweight");
     require_true(abcpp::parse_kernel("cosine") ==
-                 abcpp::Kernel::Cosine, "parse cosine");
+                 abcpp::kernel::cosine, "parse cosine");
 
     require_true(abcpp::parse_transform("none") ==
-                 abcpp::Transform::None, "parse no transform");
+                 abcpp::transform::none, "parse no transform");
     require_true(abcpp::parse_transform("log") ==
-                 abcpp::Transform::Log, "parse log");
+                 abcpp::transform::log, "parse log");
     require_true(abcpp::parse_transform("logit") ==
-                 abcpp::Transform::Logit, "parse logit");
+                 abcpp::transform::logit, "parse logit");
 
     require_true(abcpp::parse_reduction("") ==
-                 abcpp::ReductionMethod::None, "parse empty reduction");
+                 abcpp::reduction_method::none, "parse empty reduction");
     require_true(abcpp::parse_reduction("null") ==
-                 abcpp::ReductionMethod::None, "parse null reduction");
+                 abcpp::reduction_method::none, "parse null reduction");
     require_true(abcpp::parse_reduction("pca") ==
-                 abcpp::ReductionMethod::PCA, "parse pca");
+                 abcpp::reduction_method::pca, "parse pca");
     require_true(abcpp::parse_reduction("pls") ==
-                 abcpp::ReductionMethod::PLS, "parse pls");
+                 abcpp::reduction_method::pls, "parse pls");
 
-    require_true(abcpp::method_name(abcpp::Method::Ridge) == "ridge",
+    require_true(abcpp::method_name(abcpp::method::ridge) == "ridge",
                  "method name");
-    require_true(abcpp::kernel_name(abcpp::Kernel::Cosine) == "cosine",
+    require_true(abcpp::kernel_name(abcpp::kernel::cosine) == "cosine",
                  "kernel name");
-    require_true(abcpp::transform_name(abcpp::Transform::Logit) == "logit",
+    require_true(abcpp::transform_name(abcpp::transform::logit) == "logit",
                  "transform name");
-    require_true(abcpp::reduction_name(abcpp::ReductionMethod::PCA) == "PCA",
+    require_true(abcpp::reduction_name(abcpp::reduction_method::pca) == "PCA",
                  "reduction name");
 
     require_true(abcpp::method_name(static_cast<abcpp::Method>(100)) ==
@@ -970,14 +998,14 @@ void test_neuralnet_runs() {
     }
 
     abcpp::AbcOptions options;
-    options.method = abcpp::Method::NeuralNet;
+    options.method = abcpp::method::neuralnet;
     options.tol = 0.5;
     options.hcorr = true;
-    options.numnet = 2;
-    options.sizenet = 2;
-    options.maxit = 50;
+    options.nnet.numnet = 2;
+    options.nnet.sizenet = 2;
+    options.nnet.maxit = 50;
 
-    const abcpp::AbcResult result = abcpp::abc(
+    const abcpp::AbcResult result = abcpp::fit(
         std::vector<double>{2.0, 3.0},
         param,
         sumstat,
@@ -999,12 +1027,12 @@ void test_ridge_with_hcorr() {
     }
 
     abcpp::AbcOptions options;
-    options.method = abcpp::Method::Ridge;
+    options.method = abcpp::method::ridge;
     options.tol = 0.5;
     options.hcorr = true;
-    options.kernel = abcpp::Kernel::Gaussian;
+    options.kernel = abcpp::kernel::gaussian;
 
-    const abcpp::AbcResult result = abcpp::abc(
+    const abcpp::AbcResult result = abcpp::fit(
         std::vector<double>{2.0},
         param,
         sumstat,
@@ -1026,15 +1054,15 @@ void test_transforms() {
     }
 
     abcpp::AbcOptions options;
-    options.method = abcpp::Method::LocLinear;
+    options.method = abcpp::method::loclinear;
     options.tol = 0.5;
-    options.transformations = {abcpp::Transform::Log, abcpp::Transform::Logit};
+    options.transformations = {abcpp::transform::log, abcpp::transform::logit};
     abcpp::Matrix bounds(2, 2);
     bounds(0, 0) = 0.0; bounds(0, 1) = 1.0; // not used for log
     bounds(1, 0) = 0.0; bounds(1, 1) = 1.0;
     options.logit_bounds = bounds;
 
-    const abcpp::AbcResult result = abcpp::abc(
+    const abcpp::AbcResult result = abcpp::fit(
         std::vector<double>{2.0},
         param,
         sumstat,
@@ -1058,22 +1086,22 @@ void test_all_kernels_and_nonfinite_rows() {
     param(5, 0) = std::numeric_limits<double>::infinity();
 
     const std::vector<abcpp::Kernel> kernels{
-        abcpp::Kernel::Epanechnikov,
-        abcpp::Kernel::Rectangular,
-        abcpp::Kernel::Gaussian,
-        abcpp::Kernel::Triangular,
-        abcpp::Kernel::Biweight,
-        abcpp::Kernel::Cosine
+        abcpp::kernel::epanechnikov,
+        abcpp::kernel::rectangular,
+        abcpp::kernel::gaussian,
+        abcpp::kernel::triangular,
+        abcpp::kernel::biweight,
+        abcpp::kernel::cosine
     };
 
     for (abcpp::Kernel kernel : kernels) {
         abcpp::AbcOptions options;
-        options.method = abcpp::Method::LocLinear;
+        options.method = abcpp::method::loclinear;
         options.kernel = kernel;
         options.tol = 0.35;
         options.hcorr = false;
 
-        const abcpp::AbcResult result = abcpp::abc(
+        const abcpp::AbcResult result = abcpp::fit(
             make_target_from_row(sumstat, 10),
             param,
             sumstat,
@@ -1087,7 +1115,7 @@ void test_all_kernels_and_nonfinite_rows() {
             require_true(result.weights(row, 0) >= 0.0,
                          "kernel weights nonnegative");
         }
-        if (kernel == abcpp::Kernel::Gaussian) {
+        if (kernel == abcpp::kernel::gaussian) {
             require_true(result.unadj_values.rows() == 38,
                          "gaussian keeps all finite rows");
         }
@@ -1103,12 +1131,12 @@ void test_subset_limits_accepted_rows() {
     abcpp::Matrix sumstat = make_sumstat_matrix(10, 1);
 
     abcpp::AbcOptions options;
-    options.method = abcpp::Method::Rejection;
+    options.method = abcpp::method::rejection;
     options.tol = 1.0;
     options.subset = std::vector<bool>{true, false, true, false, true,
                                        false, true, false, true, false};
 
-    const abcpp::AbcResult result = abcpp::abc(
+    const abcpp::AbcResult result = abcpp::fit(
         make_target_from_row(sumstat, 0),
         param,
         sumstat,
@@ -1130,6 +1158,7 @@ int main() {
         test_statistics_helpers();
         test_linear_algebra_helpers();
         test_rejection_accepts_expected_rows();
+        test_object_api_supports_chaining();
         test_loclinear_runs_and_summarizes();
         test_reductions_keep_requested_dimension();
         test_reduction_none_and_pls_contracts();

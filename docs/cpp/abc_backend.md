@@ -8,7 +8,7 @@ transformation, regression adjustment, and result assembly.
 
 ## Main Functions And Classes
 
-- `abcpp::abc()`
+- `abcpp::opt::run()` / `abcpp::fit()`
 - `abcpp::AbcOptions`
 - `abcpp::AbcResult`
 - `abcpp::SummaryResult`
@@ -52,7 +52,7 @@ Only the neural-network adjustment uses randomness. It is controlled by
 
 ## R/Python Relationship
 
-R and Python wrappers call only `abcpp::abc()` and `abcpp::summary()`.
+R and Python wrappers call only `abcpp::opt::run()` / `abcpp::fit()` and `abcpp::summary()`.
 Internal backend helpers are intentionally not exported as user-facing
 R/Python functions.
 

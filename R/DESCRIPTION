@@ -53,7 +53,7 @@ Depends: R (>= 4.1.0)
 Imports: Rcpp
 LinkingTo: Rcpp
 SystemRequirements: C++17
-RoxygenNote: 7.3.3
+RoxygenNote: 8.0.0
 Suggests:
     abc,
     testthat

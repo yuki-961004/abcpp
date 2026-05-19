@@ -7,13 +7,15 @@ abcpp = pytest.importorskip("abcpp")
 def test_reduction_none_keeps_original_dimension(toy_data):
     result = abcpp.abc(
         target=toy_data["target"],
-        param=toy_data["param"],
-        sumstat=toy_data["sumstat"],
-        tol=0.20,
-        method="loclinear",
-        hcorr=False,
-        transf=["none", "none"],
-        reduction="none",
+        params=toy_data["param"],
+        sumstats=toy_data["sumstat"],
+        control={
+            "method": "loclinear",
+            "tol": 0.20,
+            "hcorr": False,
+            "transf": ["none", "none"],
+            "reduction": "none",
+        },
     )
 
     assert result["numstat"] == toy_data["sumstat"].shape[1]
@@ -23,18 +25,15 @@ def test_reduction_none_keeps_original_dimension(toy_data):
 def test_default_reduction_is_none(toy_data):
     result_default = abcpp.abc(
         target=toy_data["target"],
-        param=toy_data["param"],
-        sumstat=toy_data["sumstat"],
-        tol=0.20,
-        method="rejection",
+        params=toy_data["param"],
+        sumstats=toy_data["sumstat"],
+        control={"tol": 0.20},
     )
     result_alias = abcpp.abc(
         target=toy_data["target"],
-        param=toy_data["param"],
-        sumstat=toy_data["sumstat"],
-        tol=0.20,
-        method="rejection",
-        reduction="none",
+        params=toy_data["param"],
+        sumstats=toy_data["sumstat"],
+        control={"tol": 0.20, "reduction": "none"},
     )
 
     assert result_default["numstat"] == result_alias["numstat"]
@@ -45,14 +44,16 @@ def test_default_reduction_is_none(toy_data):
 def test_pca_reduction_returns_requested_dimension(toy_data):
     result = abcpp.abc(
         target=toy_data["target"],
-        param=toy_data["param"],
-        sumstat=toy_data["sumstat"],
-        tol=0.20,
-        method="ridge",
-        hcorr=False,
-        transf=["none", "none"],
-        reduction="pca",
-        n_comp=2,
+        params=toy_data["param"],
+        sumstats=toy_data["sumstat"],
+        control={
+            "method": "ridge",
+            "tol": 0.20,
+            "hcorr": False,
+            "transf": ["none", "none"],
+            "reduction": "pca",
+            "n_comp": 2,
+        },
     )
 
     assert result["numstat"] == 2
@@ -64,14 +65,16 @@ def test_pca_reduction_returns_requested_dimension(toy_data):
 def test_pls_reduction_returns_requested_dimension(toy_data):
     result = abcpp.abc(
         target=toy_data["target"],
-        param=toy_data["param"],
-        sumstat=toy_data["sumstat"],
-        tol=0.20,
-        method="ridge",
-        hcorr=False,
-        transf=["none", "none"],
-        reduction="pls",
-        n_comp=2,
+        params=toy_data["param"],
+        sumstats=toy_data["sumstat"],
+        control={
+            "method": "ridge",
+            "tol": 0.20,
+            "hcorr": False,
+            "transf": ["none", "none"],
+            "reduction": "pls",
+            "n_comp": 2,
+        },
     )
 
     assert result["numstat"] == 2

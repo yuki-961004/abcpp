@@ -28,7 +28,7 @@ add_subdirectory(Cpp)
 if(ABCPP_BUILD_TESTS)
     enable_testing()
     add_executable(abcpp_tests tests/Cpp/test_core.cpp)
-    target_link_libraries(abcpp_tests PRIVATE abcpp::abc)
+    target_link_libraries(abcpp_tests PRIVATE abcpp::abcpp)
     add_test(NAME abcpp_tests COMMAND abcpp_tests)
 
     add_executable(

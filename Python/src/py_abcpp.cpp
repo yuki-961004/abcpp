@@ -94,10 +94,10 @@ py::list bool_vector_to_python(const std::vector<bool>& values) {
     return out;
 }
 
-std::vector<abcpp::Transform> transforms_to_cpp(
+std::vector<abcpp::transform> transforms_to_cpp(
     const std::vector<std::string>& values
 ) {
-    std::vector<abcpp::Transform> out;
+    std::vector<abcpp::transform> out;
     out.reserve(values.size());
     for (const std::string& value : values) {
         out.push_back(abcpp::parse_transform(value));
@@ -106,13 +106,49 @@ std::vector<abcpp::Transform> transforms_to_cpp(
 }
 
 py::list transforms_to_python(
-    const std::vector<abcpp::Transform>& transforms
+    const std::vector<abcpp::transform>& transforms
 ) {
     py::list out;
-    for (abcpp::Transform transform : transforms) {
+    for (abcpp::transform transform : transforms) {
         out.append(abcpp::transform_name(transform));
     }
     return out;
+}
+
+abcpp::AbcOptions control_to_options(const py::dict& control) {
+    py::dict nnet = control["nnet"].cast<py::dict>();
+
+    abcpp::AbcOptions options;
+    options.tol = control["tol"].cast<double>();
+    options.method = abcpp::parse_method(control["method"].cast<std::string>());
+    options.hcorr = control["hcorr"].cast<bool>();
+    options.transformations = transforms_to_cpp(
+        control["transf"].cast<std::vector<std::string>>()
+    );
+    options.logit_bounds = numpy_to_matrix(control["logit_bounds"].cast<
+        py::array_t<double, py::array::c_style | py::array::forcecast>
+    >());
+    options.subset = numpy_to_bool_vector(control["subset"].cast<
+        py::array_t<bool, py::array::c_style | py::array::forcecast>
+    >());
+    options.kernel = abcpp::parse_kernel(control["kernel"].cast<std::string>());
+    options.seed = static_cast<unsigned int>(control["seed"].cast<int>());
+    options.reduction.method = abcpp::parse_reduction(
+        control["reduction"].cast<std::string>()
+    );
+    options.reduction.n_comp = static_cast<std::size_t>(
+        control["n_comp"].cast<int>()
+    );
+    options.nnet.numnet = nnet["numnet"].cast<int>();
+    options.nnet.sizenet = nnet["sizenet"].cast<int>();
+    options.nnet.lambda = nnet["lambda"].cast<std::vector<double>>();
+    options.nnet.maxit = nnet["maxit"].cast<int>();
+    options.nnet.rang = nnet["rang"].cast<double>();
+    options.nnet.abstol = nnet["abstol"].cast<double>();
+    options.nnet.reltol = nnet["reltol"].cast<double>();
+    options.nnet.verbose = nnet["verbose"].cast<bool>();
+    options.nnet.skip = nnet["skip"].cast<bool>();
+    return options;
 }
 
 py::dict result_to_python(const abcpp::AbcResult& result) {
@@ -127,16 +163,24 @@ py::dict result_to_python(const abcpp::AbcResult& result) {
     diagnostics["bic"] = result.diagnostics.bic;
     diagnostics["lambda"] = result.diagnostics.lambda;
 
+    py::dict nnet;
+    nnet["numnet"] = result.options.nnet.numnet;
+    nnet["sizenet"] = result.options.nnet.sizenet;
+    nnet["lambda"] = result.options.nnet.lambda;
+    nnet["maxit"] = result.options.nnet.maxit;
+    nnet["rang"] = result.options.nnet.rang;
+    nnet["abstol"] = result.options.nnet.abstol;
+    nnet["reltol"] = result.options.nnet.reltol;
+    nnet["verbose"] = result.options.nnet.verbose;
+    nnet["skip"] = result.options.nnet.skip;
+
     py::dict options;
     options["tol"] = result.options.tol;
     options["method"] = abcpp::method_name(result.options.method);
     options["kernel"] = abcpp::kernel_name(result.options.kernel);
     options["hcorr"] = result.options.hcorr;
-    options["numnet"] = result.options.numnet;
-    options["sizenet"] = result.options.sizenet;
-    options["lambda"] = result.options.lambda;
-    options["maxit"] = result.options.maxit;
     options["seed"] = result.options.seed;
+    options["nnet"] = nnet;
     options["reduction"] = reduction;
 
     py::dict out;
@@ -216,41 +260,11 @@ PYBIND11_MODULE(_core, m) {
                 param,
             py::array_t<double, py::array::c_style | py::array::forcecast>
                 sumstat,
-            double tol,
-            const std::string& method,
-            bool hcorr,
-            const std::vector<std::string>& transf,
-            py::array_t<double, py::array::c_style | py::array::forcecast>
-                logit_bounds,
-            py::array_t<bool, py::array::c_style | py::array::forcecast>
-                subset,
-            const std::string& kernel,
-            int numnet,
-            int sizenet,
-            py::array_t<double, py::array::c_style | py::array::forcecast>
-                lambda_values,
-            int maxit,
-            const std::string& reduction,
-            int n_comp,
-            int seed
+            py::dict control
         ) {
-            abcpp::AbcOptions options;
-            options.tol = tol;
-            options.method = abcpp::parse_method(method);
-            options.hcorr = hcorr;
-            options.transformations = transforms_to_cpp(transf);
-            options.logit_bounds = numpy_to_matrix(logit_bounds);
-            options.subset = numpy_to_bool_vector(subset);
-            options.kernel = abcpp::parse_kernel(kernel);
-            options.numnet = numnet;
-            options.sizenet = sizenet;
-            options.lambda = numpy_to_vector(lambda_values);
-            options.maxit = maxit;
-            options.reduction.method = abcpp::parse_reduction(reduction);
-            options.reduction.n_comp = static_cast<std::size_t>(n_comp);
-            options.seed = static_cast<unsigned int>(seed);
+            const abcpp::AbcOptions options = control_to_options(control);
 
-            const abcpp::AbcResult result = abcpp::abc(
+            const abcpp::AbcResult result = abcpp::fit(
                 numpy_to_matrix(target),
                 numpy_to_matrix(param),
                 numpy_to_matrix(sumstat),
@@ -261,20 +275,7 @@ PYBIND11_MODULE(_core, m) {
         py::arg("target"),
         py::arg("param"),
         py::arg("sumstat"),
-        py::arg("tol"),
-        py::arg("method"),
-        py::arg("hcorr"),
-        py::arg("transf"),
-        py::arg("logit_bounds"),
-        py::arg("subset"),
-        py::arg("kernel"),
-        py::arg("numnet"),
-        py::arg("sizenet"),
-        py::arg("lambda_values"),
-        py::arg("maxit"),
-        py::arg("reduction"),
-        py::arg("n_comp"),
-        py::arg("seed")
+        py::arg("control")
     );
 
     m.def(
@@ -285,41 +286,11 @@ PYBIND11_MODULE(_core, m) {
             py::array_t<double, py::array::c_style | py::array::forcecast>
                 param,
             py::sequence sumstats,
-            double tol,
-            const std::string& method,
-            bool hcorr,
-            const std::vector<std::string>& transf,
-            py::array_t<double, py::array::c_style | py::array::forcecast>
-                logit_bounds,
-            py::array_t<bool, py::array::c_style | py::array::forcecast>
-                subset,
-            const std::string& kernel,
-            int numnet,
-            int sizenet,
-            py::array_t<double, py::array::c_style | py::array::forcecast>
-                lambda_values,
-            int maxit,
-            const std::string& reduction,
-            int n_comp,
-            int seed
+            py::dict control
         ) {
-            abcpp::AbcOptions options;
-            options.tol = tol;
-            options.method = abcpp::parse_method(method);
-            options.hcorr = hcorr;
-            options.transformations = transforms_to_cpp(transf);
-            options.logit_bounds = numpy_to_matrix(logit_bounds);
-            options.subset = numpy_to_bool_vector(subset);
-            options.kernel = abcpp::parse_kernel(kernel);
-            options.numnet = numnet;
-            options.sizenet = sizenet;
-            options.lambda = numpy_to_vector(lambda_values);
-            options.maxit = maxit;
-            options.reduction.method = abcpp::parse_reduction(reduction);
-            options.reduction.n_comp = static_cast<std::size_t>(n_comp);
-            options.seed = static_cast<unsigned int>(seed);
+            const abcpp::AbcOptions options = control_to_options(control);
 
-            const abcpp::AbcResult result = abcpp::abc(
+            const abcpp::AbcResult result = abcpp::fit(
                 numpy_to_matrix(target),
                 numpy_to_matrix(param),
                 sequence_to_matrices(sumstats),
@@ -330,20 +301,7 @@ PYBIND11_MODULE(_core, m) {
         py::arg("target"),
         py::arg("param"),
         py::arg("sumstats"),
-        py::arg("tol"),
-        py::arg("method"),
-        py::arg("hcorr"),
-        py::arg("transf"),
-        py::arg("logit_bounds"),
-        py::arg("subset"),
-        py::arg("kernel"),
-        py::arg("numnet"),
-        py::arg("sizenet"),
-        py::arg("lambda_values"),
-        py::arg("maxit"),
-        py::arg("reduction"),
-        py::arg("n_comp"),
-        py::arg("seed")
+        py::arg("control")
     );
 
     m.def(
