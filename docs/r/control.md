@@ -16,6 +16,9 @@ list(
   kernel = "epanechnikov",
   hcorr = TRUE,
   transf = "none",
+  logit.bounds = NULL,
+  subset = NULL,
+  prior.weights = NULL,
   seed = 1004,
   reduction = "none",
   n_comp = 0L,
@@ -32,6 +35,10 @@ list(
   )
 )
 ```
+
+`prior.weights` is an optional numeric vector with one value per row of
+`params`. For `loclinear`, `ridge`, and `neuralnet`, the backend multiplies
+the distance-kernel regression weight by the corresponding prior weight.
 
 Partial overrides preserve the rest of the defaults:
 

@@ -87,6 +87,45 @@ def test_loclinear_runs(toy_data):
     assert numpy.isfinite(result["adj_values"]).all()
 
 
+def test_prior_weights_scale_regression_weights(toy_data):
+    prior_weights = numpy.arange(1, toy_data["param"].shape[0] + 1) / 10.0
+    control = {
+        "method": "loclinear",
+        "tol": 0.20,
+        "hcorr": False,
+        "kernel": "gaussian",
+        "transf": ["none", "none"],
+    }
+    no_prior = abcpp.abc(
+        target=toy_data["target"],
+        params=toy_data["param"],
+        sumstats=toy_data["sumstat"],
+        control=control,
+    )
+    weighted = abcpp.abc(
+        target=toy_data["target"],
+        params=toy_data["param"],
+        sumstats=toy_data["sumstat"],
+        control={**control, "prior_weights": prior_weights},
+    )
+
+    accepted = numpy.asarray(weighted["accepted_indices"], dtype=int)
+    numpy.testing.assert_array_equal(
+        accepted,
+        numpy.asarray(no_prior["accepted_indices"], dtype=int),
+    )
+    numpy.testing.assert_allclose(
+        weighted["weights"].reshape(-1),
+        no_prior["weights"].reshape(-1) * prior_weights[accepted],
+        rtol=0,
+        atol=1e-12,
+    )
+    numpy.testing.assert_allclose(
+        weighted["options"]["prior_weights"],
+        prior_weights,
+    )
+
+
 def test_ridge_runs(toy_data):
     result = abcpp.abc(
         target=toy_data["target"],

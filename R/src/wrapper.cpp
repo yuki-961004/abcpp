@@ -108,6 +108,7 @@ abcpp::AbcOptions make_options(
     SEXP transf_sexp,
     SEXP logit_bounds_sexp,
     SEXP subset_sexp,
+    SEXP prior_weights_sexp,
     SEXP kernel_sexp,
     SEXP numnet_sexp,
     SEXP sizenet_sexp,
@@ -124,6 +125,7 @@ abcpp::AbcOptions make_options(
 ) {
     const Rcpp::NumericMatrix logit_bounds(logit_bounds_sexp);
     const Rcpp::LogicalVector subset(subset_sexp);
+    const Rcpp::NumericVector prior_weights(prior_weights_sexp);
     const Rcpp::NumericVector lambda(lambda_sexp);
 
     abcpp::AbcOptions options;
@@ -135,6 +137,7 @@ abcpp::AbcOptions make_options(
     );
     options.logit_bounds = r_matrix_to_cpp(logit_bounds);
     options.subset = r_subset_to_cpp(subset);
+    options.prior_weights = Rcpp::as<std::vector<double>>(prior_weights);
     options.kernel = abcpp::parse_kernel(Rcpp::as<std::string>(kernel_sexp));
     options.nnet.numnet = Rcpp::as<int>(numnet_sexp);
     options.nnet.sizenet = Rcpp::as<int>(sizenet_sexp);
@@ -186,6 +189,7 @@ SEXP result_to_r(const abcpp::AbcResult& result) {
         Rcpp::Named("method") = abcpp::method_name(result.options.method),
         Rcpp::Named("kernel") = abcpp::kernel_name(result.options.kernel),
         Rcpp::Named("hcorr") = result.options.hcorr,
+        Rcpp::Named("prior.weights") = result.options.prior_weights,
         Rcpp::Named("seed") = static_cast<int>(result.options.seed),
         Rcpp::Named("nnet") = nnet_info,
         Rcpp::Named("reduction") = reduction_info
@@ -232,6 +236,7 @@ extern "C" SEXP _abcpp_abc(
     SEXP transf_sexp,
     SEXP logit_bounds_sexp,
     SEXP subset_sexp,
+    SEXP prior_weights_sexp,
     SEXP kernel_sexp,
     SEXP numnet_sexp,
     SEXP sizenet_sexp,
@@ -258,6 +263,7 @@ extern "C" SEXP _abcpp_abc(
         transf_sexp,
         logit_bounds_sexp,
         subset_sexp,
+        prior_weights_sexp,
         kernel_sexp,
         numnet_sexp,
         sizenet_sexp,
@@ -295,6 +301,7 @@ extern "C" SEXP _abcpp_abc_matrix_list(
     SEXP transf_sexp,
     SEXP logit_bounds_sexp,
     SEXP subset_sexp,
+    SEXP prior_weights_sexp,
     SEXP kernel_sexp,
     SEXP numnet_sexp,
     SEXP sizenet_sexp,
@@ -321,6 +328,7 @@ extern "C" SEXP _abcpp_abc_matrix_list(
         transf_sexp,
         logit_bounds_sexp,
         subset_sexp,
+        prior_weights_sexp,
         kernel_sexp,
         numnet_sexp,
         sizenet_sexp,
@@ -352,12 +360,12 @@ static const R_CallMethodDef CallEntries[] = {
     {
         "_abcpp_abc",
         reinterpret_cast<DL_FUNC>(&_abcpp_abc),
-        22
+        23
     },
     {
         "_abcpp_abc_matrix_list",
         reinterpret_cast<DL_FUNC>(&_abcpp_abc_matrix_list),
-        22
+        23
     },
     {nullptr, nullptr, 0}
 };

@@ -13,6 +13,7 @@ DEFAULT_CONTROL = {
     "transf": "none",
     "logit_bounds": None,
     "subset": None,
+    "prior_weights": None,
     "seed": 1004,
     "reduction": "none",
     "n_comp": 0,
@@ -55,6 +56,13 @@ def _prepare_control(control):
         merged["logit_bounds"] = numpy.zeros((1, 2), dtype=float)
     if merged["subset"] is None:
         merged["subset"] = numpy.asarray([], dtype=bool)
+    if merged["prior_weights"] is None:
+        merged["prior_weights"] = numpy.asarray([], dtype=float)
+    else:
+        merged["prior_weights"] = numpy.asarray(
+            merged["prior_weights"],
+            dtype=float,
+        )
     return merged
 
 

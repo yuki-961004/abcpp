@@ -4,7 +4,6 @@
 <!-- badges: start -->
 [![CI](https://github.com/yuki-961004/abcpp/actions/workflows/ci.yaml/badge.svg)](https://github.com/yuki-961004/abcpp/actions/workflows/ci.yaml)
 [![Code Coverage](https://codecov.io/gh/yuki-961004/abcpp/graph/badge.svg?component=interfaces)](https://app.codecov.io/gh/yuki-961004/abcpp/components)
-[![License: GPL-3](https://img.shields.io/badge/license-GPL--3-blue.svg)](LICENSE)
 [![R](https://img.shields.io/badge/R-%3E%3D4.1.0-276DC3.svg)](R/DESCRIPTION)
 [![Python](https://img.shields.io/badge/python-%3E%3D3.10-3776AB.svg)](Python/pyproject.toml)
 <!-- badges: end -->

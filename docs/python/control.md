@@ -16,6 +16,9 @@ fit = abcpp.abc(target, params, sumstats, control=None)
     "kernel": "epanechnikov",
     "hcorr": True,
     "transf": "none",
+    "logit_bounds": None,
+    "subset": None,
+    "prior_weights": None,
     "seed": 1004,
     "reduction": "none",
     "n_comp": 0,
@@ -32,6 +35,10 @@ fit = abcpp.abc(target, params, sumstats, control=None)
     },
 }
 ```
+
+`prior_weights` is an optional numeric vector with one value per row of
+`params`. For `loclinear`, `ridge`, and `neuralnet`, the backend multiplies
+the distance-kernel regression weight by the corresponding prior weight.
 
 Partial overrides preserve the rest of the defaults:
 

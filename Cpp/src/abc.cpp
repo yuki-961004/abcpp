@@ -1391,6 +1391,22 @@ result fit(
                 << ".";
         throw std::invalid_argument(message.str());
     }
+    if (!raw_options.prior_weights.empty() &&
+        raw_options.prior_weights.size() != raw_param.rows()) {
+        std::ostringstream message;
+        message << "abc() expected prior_weights length "
+                << raw_options.prior_weights.size()
+                << " to equal param.rows() " << raw_param.rows()
+                << ".";
+        throw std::invalid_argument(message.str());
+    }
+    for (double prior_weight : raw_options.prior_weights) {
+        if (!std::isfinite(prior_weight) || prior_weight < 0.0) {
+            throw std::invalid_argument(
+                "prior_weights must contain finite non-negative values."
+            );
+        }
+    }
     if (raw_options.nnet.lambda.empty()) {
         throw std::invalid_argument("lambda must contain at least one value.");
     }
@@ -1530,12 +1546,24 @@ result fit(
      * Regression Adjustment
      * ========================= */
 
-    const std::vector<double> weights_vec = build_weights(
+    std::vector<double> weights_vec = build_weights(
         distances,
         accepted_rows,
         cutoff,
         options.kernel
     );
+    if (!options.prior_weights.empty()) {
+        double weight_total = 0.0;
+        for (std::size_t i = 0; i < accepted_rows.size(); ++i) {
+            weights_vec[i] *= options.prior_weights[accepted_rows[i]];
+            weight_total += weights_vec[i];
+        }
+        if (weight_total <= 0.0) {
+            throw std::invalid_argument(
+                "prior_weights give zero total regression weight."
+            );
+        }
+    }
 
     result.weights = Matrix(weights_vec.size(), 1, 0.0);
     for (std::size_t i = 0; i < weights_vec.size(); ++i) {
@@ -1687,6 +1715,11 @@ opt& opt::set_hcorr(bool value) {
 opt& opt::set_transform(abcpp::transform value) {
     options_.transf = value;
     options_.transformations.assign(1, value);
+    return *this;
+}
+
+opt& opt::set_prior_weights(const std::vector<double>& value) {
+    options_.prior_weights = value;
     return *this;
 }
 

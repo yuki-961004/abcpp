@@ -131,6 +131,9 @@ abcpp::AbcOptions control_to_options(const py::dict& control) {
     options.subset = numpy_to_bool_vector(control["subset"].cast<
         py::array_t<bool, py::array::c_style | py::array::forcecast>
     >());
+    options.prior_weights = numpy_to_vector(control["prior_weights"].cast<
+        py::array_t<double, py::array::c_style | py::array::forcecast>
+    >());
     options.kernel = abcpp::parse_kernel(control["kernel"].cast<std::string>());
     options.seed = static_cast<unsigned int>(control["seed"].cast<int>());
     options.reduction.method = abcpp::parse_reduction(
@@ -179,6 +182,7 @@ py::dict result_to_python(const abcpp::AbcResult& result) {
     options["method"] = abcpp::method_name(result.options.method);
     options["kernel"] = abcpp::kernel_name(result.options.kernel);
     options["hcorr"] = result.options.hcorr;
+    options["prior_weights"] = result.options.prior_weights;
     options["seed"] = result.options.seed;
     options["nnet"] = nnet;
     options["reduction"] = reduction;

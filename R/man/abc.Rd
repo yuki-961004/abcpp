@@ -7,8 +7,8 @@
 abc(target, params, sumstats, control = list())
 }
 \arguments{
-\item{target}{A vector, one-row matrix, or two-dimensional matrix of observed
-summary statistics.}
+\item{target}{A vector, one-row matrix, or two-dimensional matrix of
+observed summary statistics.}
 
 \item{params}{A vector, one-row matrix, matrix, or data frame of simulated
 parameter values. Each row corresponds to one simulation.}
@@ -17,23 +17,30 @@ parameter values. Each row corresponds to one simulation.}
 simulated summary statistics. Rows, or list elements for matrix-valued
 summaries, correspond to rows of `params`.}
 
-\item{control}{Nested list of algorithm controls. See [control] for the full
-schema. Common fields include `method`, `tol`, `kernel`, `hcorr`, `transf`,
-`seed`, `reduction`, `n_comp`, and `nnet`.}
+\item{control}{Nested list of algorithm controls. See [control] for the
+full schema. Common fields include `method`, `tol`, `kernel`, `hcorr`,
+`transf`, `prior.weights`, `seed`, `reduction`, `n_comp`, and `nnet`.}
 }
 \value{
-An object of class \code{"abcpp"} containing complete algorithm output.
-  This object is a list containing the following components:
+An object of class \code{"abcpp"} containing complete algorithm
+  output. This object is a list containing the following components:
   \itemize{
-    \item \code{unadj.values}: A matrix of unadjusted accepted posterior samples.
-    \item \code{adj.values}: A matrix of adjusted posterior samples when a regression method (e.g., \code{"loclinear"}, \code{"ridge"}, \code{"neuralnet"}) is used; otherwise \code{NULL}.
+    \item \code{unadj.values}: A matrix of unadjusted accepted posterior
+      samples.
+    \item \code{adj.values}: A matrix of adjusted posterior samples when
+      a regression method (e.g., \code{"loclinear"}, \code{"ridge"},
+      \code{"neuralnet"}) is used; otherwise \code{NULL}.
     \item \code{ss}: A matrix of accepted summary statistics.
-    \item \code{weights}: A numeric vector of regression weights used for adjustments.
-    \item \code{dist}: A numeric vector of Euclidean distances between accepted simulated and target summary statistics.
-    \item \code{region}: A logical vector indicating which simulations were accepted (unadjusted).
+    \item \code{weights}: A numeric vector of regression weights used for
+      adjustments.
+    \item \code{dist}: A numeric vector of Euclidean distances between
+      accepted simulated and target summary statistics.
+    \item \code{region}: A logical vector indicating which simulations
+      were accepted (unadjusted).
     \item \code{method}: The ABC method used.
     \item \code{call}: The original matched function call.
-    \item \code{names}: A list containing \code{parameter.names} and \code{statistics.names}.
+    \item \code{names}: A list containing \code{parameter.names} and
+      \code{statistics.names}.
   }
 }
 \description{
@@ -42,17 +49,21 @@ interface is intentionally small: users provide `target`, `params`,
 `sumstats`, and an optional nested `control` list.
 }
 \details{
-The algorithmic implementation lives in C++. The R layer only prepares the input matrices, merges
-the \code{control} list with defaults, calls the compiled backend, and attaches the
-\code{"abcpp"} class to the output.
+The algorithmic implementation lives in C++. The R layer only prepares
+the input matrices, merges the \code{control} list with defaults, calls
+the compiled backend, and attaches the \code{"abcpp"} class to the
+output.
 
-The core ABC procedure calculates the Euclidean distance between the simulated summary
-statistics and the target summary statistics. Optionally, dimensionality reduction (PCA or PLS)
-can be applied to the summary statistics before calculating distances. A predefined proportion (\code{tol}) of the simulations
-closest to the target are retained. The \code{method} parameter in the \code{control} list specifies whether
-the accepted parameters are returned as-is (\code{"rejection"}) or adjusted using a regression model
-(\code{"loclinear"}, \code{"ridge"}, or \code{"neuralnet"}) to account for the discrepancy between
-the simulated and observed summary statistics.
+The core ABC procedure calculates the Euclidean distance between the
+simulated summary statistics and the target summary statistics.
+Optionally, dimensionality reduction (PCA or PLS) can be applied to the
+summary statistics before calculating distances. A predefined proportion
+(\code{tol}) of the simulations closest to the target are retained. The
+\code{method} parameter in the \code{control} list specifies whether the
+accepted parameters are returned as-is (\code{"rejection"}) or adjusted
+using a regression model (\code{"loclinear"}, \code{"ridge"}, or
+\code{"neuralnet"}) to account for the discrepancy between the simulated
+and observed summary statistics.
 
 \code{summary()} computes statistical summaries from the returned object.
 }

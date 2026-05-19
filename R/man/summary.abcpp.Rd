@@ -18,24 +18,32 @@ summaries.}
 \item{...}{Additional arguments for S3 compatibility.}
 }
 \value{
-A list of class \code{"summary.abcpp"} containing the following components:
+A list of class \code{"summary.abcpp"} containing the following
+  components:
   \itemize{
-    \item \code{statistics}: A matrix of posterior summary statistics for each parameter. The rows include Minimum, Lower endpoint, Median, Mean, Upper endpoint, Maximum, and Standard Deviation.
-    \item \code{unadjusted}: A logical value indicating whether the unadjusted samples were summarized.
-    \item \code{interval}: The numeric credible interval width specified by the user.
-    \item \code{method}: The ABC method inherited from the fitted \code{abcpp} object.
+    \item \code{statistics}: A matrix of posterior summary statistics for
+      each parameter. The rows include Minimum, Lower endpoint, Median,
+      Mean, Upper endpoint, Maximum, and Standard Deviation.
+    \item \code{unadjusted}: A logical value indicating whether the
+      unadjusted samples were summarized.
+    \item \code{interval}: The numeric credible interval width specified
+      by the user.
+    \item \code{method}: The ABC method inherited from the fitted
+      \code{abcpp} object.
   }
 }
 \description{
 Summarizes posterior samples returned by [abc()].
 }
 \details{
-The summary extracts the relevant posterior samples and calculates the minimum, lower interval
-endpoint, median, mean, upper interval endpoint, maximum, and standard deviation for each parameter.
+The summary extracts the relevant posterior samples and calculates the
+minimum, lower interval endpoint, median, mean, upper interval endpoint,
+maximum, and standard deviation for each parameter.
 
-For \code{method = "rejection"}, or when adjusted values are not available, unadjusted samples are
-always summarized. When an adjusted method is used (e.g., \code{"loclinear"}), the adjusted samples
-are summarized by default unless \code{unadj = TRUE} is specified.
+For \code{method = "rejection"}, or when adjusted values are not available,
+unadjusted samples are always summarized. When an adjusted method is used
+(e.g., \code{"loclinear"}), the adjusted samples are summarized by default
+unless \code{unadj = TRUE} is specified.
 }
 \examples{
 set.seed(1004)

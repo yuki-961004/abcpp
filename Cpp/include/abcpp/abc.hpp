@@ -22,6 +22,7 @@ public:
     opt& set_kernel(kernel value);
     opt& set_hcorr(bool value);
     opt& set_transform(transform value);
+    opt& set_prior_weights(const std::vector<double>& value);
     opt& set_seed(unsigned int value);
 
     opt& set_nnet_numnet(int value);

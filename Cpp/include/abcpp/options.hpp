@@ -71,6 +71,7 @@ struct options {
     std::vector<abcpp::transform> transformations;
     Matrix logit_bounds;
     std::vector<bool> subset;
+    std::vector<double> prior_weights;
     unsigned int seed = 1004;
     nnet_options nnet;
     ReductionOptions reduction;

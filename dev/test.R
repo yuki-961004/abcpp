@@ -194,12 +194,14 @@ toy_r_rejection <- abc::abc(
 )
 toy_cpp_rejection <- abcpp::abc(
     target = toy_target,
-    param = toy_param,
-    sumstat = toy_sumstat,
-    tol = 0.10,
-    method = "rejection",
-    transf = base::rep("none", 2L),
-    reduction = "none"
+    params = toy_param,
+    sumstats = toy_sumstat,
+    control = list(
+        tol = 0.10,
+        method = "rejection",
+        transf = base::rep("none", 2L),
+        reduction = "none"
+    )
 )
 
 # Developer note.
@@ -214,13 +216,15 @@ toy_r_loclinear <- base::suppressWarnings(abc::abc(
 ))
 toy_cpp_loclinear <- abcpp::abc(
     target = toy_target,
-    param = toy_param,
-    sumstat = toy_sumstat,
-    tol = 0.20,
-    method = "loclinear",
-    hcorr = FALSE,
-    transf = base::rep("none", 2L),
-    reduction = "none"
+    params = toy_param,
+    sumstats = toy_sumstat,
+    control = list(
+        tol = 0.20,
+        method = "loclinear",
+        hcorr = FALSE,
+        transf = base::rep("none", 2L),
+        reduction = "none"
+    )
 )
 
 toy_r_ridge <- base::suppressWarnings(abc::abc(
@@ -235,14 +239,16 @@ toy_r_ridge <- base::suppressWarnings(abc::abc(
 ))
 toy_cpp_ridge <- abcpp::abc(
     target = toy_target,
-    param = toy_param,
-    sumstat = toy_sumstat,
-    tol = 0.20,
-    method = "ridge",
-    hcorr = FALSE,
-    transf = base::rep("none", 2L),
-    lambda = base::c(0.001, 0.01),
-    reduction = "none"
+    params = toy_param,
+    sumstats = toy_sumstat,
+    control = list(
+        tol = 0.20,
+        method = "ridge",
+        hcorr = FALSE,
+        transf = base::rep("none", 2L),
+        reduction = "none",
+        nnet = list(lambda = base::c(0.001, 0.01))
+    )
 )
 toy_target_matrix <- base::matrix(toy_target, nrow = 2L, byrow = TRUE)
 toy_sumstat_matrices <- base::lapply(
@@ -253,12 +259,14 @@ toy_sumstat_matrices <- base::lapply(
 )
 toy_cpp_matrix_list <- abcpp::abc(
     target = toy_target_matrix,
-    param = toy_param,
-    sumstat = toy_sumstat_matrices,
-    tol = 0.10,
-    method = "rejection",
-    transf = base::rep("none", 2L),
-    reduction = "none"
+    params = toy_param,
+    sumstats = toy_sumstat_matrices,
+    control = list(
+        tol = 0.10,
+        method = "rejection",
+        transf = base::rep("none", 2L),
+        reduction = "none"
+    )
 )
 
 toy_alignment <- base::data.frame(
@@ -457,12 +465,14 @@ sdt_r_rejection <- abc::abc(
 )
 sdt_cpp_rejection <- abcpp::abc(
     target = sdt_target,
-    param = sdt_bank$param,
-    sumstat = sdt_bank$sumstat,
-    tol = 0.12,
-    method = "rejection",
-    transf = base::rep("none", 2L),
-    reduction = "none"
+    params = sdt_bank$param,
+    sumstats = sdt_bank$sumstat,
+    control = list(
+        tol = 0.12,
+        method = "rejection",
+        transf = base::rep("none", 2L),
+        reduction = "none"
+    )
 )
 
 sdt_r_loclinear <- base::suppressWarnings(abc::abc(
@@ -476,13 +486,15 @@ sdt_r_loclinear <- base::suppressWarnings(abc::abc(
 ))
 sdt_cpp_loclinear <- abcpp::abc(
     target = sdt_target,
-    param = sdt_bank$param,
-    sumstat = sdt_bank$sumstat,
-    tol = 0.12,
-    method = "loclinear",
-    hcorr = FALSE,
-    transf = base::rep("none", 2L),
-    reduction = "none"
+    params = sdt_bank$param,
+    sumstats = sdt_bank$sumstat,
+    control = list(
+        tol = 0.12,
+        method = "loclinear",
+        hcorr = FALSE,
+        transf = base::rep("none", 2L),
+        reduction = "none"
+    )
 )
 
 sdt_r_ridge <- base::suppressWarnings(abc::abc(
@@ -497,37 +509,43 @@ sdt_r_ridge <- base::suppressWarnings(abc::abc(
 ))
 sdt_cpp_ridge <- abcpp::abc(
     target = sdt_target,
-    param = sdt_bank$param,
-    sumstat = sdt_bank$sumstat,
-    tol = 0.12,
-    method = "ridge",
-    hcorr = FALSE,
-    transf = base::rep("none", 2L),
-    lambda = base::c(0.001, 0.01),
-    reduction = "none"
+    params = sdt_bank$param,
+    sumstats = sdt_bank$sumstat,
+    control = list(
+        tol = 0.12,
+        method = "ridge",
+        hcorr = FALSE,
+        transf = base::rep("none", 2L),
+        reduction = "none",
+        nnet = list(lambda = base::c(0.001, 0.01))
+    )
 )
 
 sdt_cpp_pca <- abcpp::abc(
     target = sdt_target,
-    param = sdt_bank$param,
-    sumstat = sdt_bank$sumstat,
-    tol = 0.12,
-    method = "ridge",
-    hcorr = FALSE,
-    transf = base::rep("none", 2L),
-    reduction = "pca",
-    n_comp = 4L
+    params = sdt_bank$param,
+    sumstats = sdt_bank$sumstat,
+    control = list(
+        tol = 0.12,
+        method = "ridge",
+        hcorr = FALSE,
+        transf = base::rep("none", 2L),
+        reduction = "pca",
+        n_comp = 4L
+    )
 )
 sdt_cpp_pls <- abcpp::abc(
     target = sdt_target,
-    param = sdt_bank$param,
-    sumstat = sdt_bank$sumstat,
-    tol = 0.12,
-    method = "ridge",
-    hcorr = FALSE,
-    transf = base::rep("none", 2L),
-    reduction = "pls",
-    n_comp = 2L
+    params = sdt_bank$param,
+    sumstats = sdt_bank$sumstat,
+    control = list(
+        tol = 0.12,
+        method = "ridge",
+        hcorr = FALSE,
+        transf = base::rep("none", 2L),
+        reduction = "pls",
+        n_comp = 2L
+    )
 )
 
 sdt_alignment <- base::data.frame(
@@ -773,23 +791,27 @@ if (!base::requireNamespace("binaryRL", quietly = TRUE)) {
             })
             rl_cpp_neuralnet_fit <- abcpp::abc(
                 target = rl_target,
-                param = rl_train_params,
-                sumstat = rl_train_sumstats,
-                tol = 0.10,
-                method = "neuralnet",
-                hcorr = FALSE,
-                transf = base::c("logit", "none"),
-                logit.bounds = base::rbind(
-                    base::c(0, 1),
-                    base::c(NA_real_, NA_real_)
-                ),
-                numnet = 10L,
-                sizenet = 5L,
-                lambda = base::c(0.0001, 0.001, 0.01),
-                trace = FALSE,
-                maxit = 500L,
-                seed = 2000L + index,
-                reduction = "none"
+                params = rl_train_params,
+                sumstats = rl_train_sumstats,
+                control = list(
+                    tol = 0.10,
+                    method = "neuralnet",
+                    hcorr = FALSE,
+                    transf = base::c("logit", "none"),
+                    logit.bounds = base::rbind(
+                        base::c(0, 1),
+                        base::c(NA_real_, NA_real_)
+                    ),
+                    seed = 2000L + index,
+                    reduction = "none",
+                    nnet = list(
+                        numnet = 10L,
+                        sizenet = 5L,
+                        lambda = base::c(0.0001, 0.001, 0.01),
+                        verbose = FALSE,
+                        maxit = 500L
+                    )
+                )
             )
 
             rl_pred_r_neuralnet[index, ] <- posterior_weighted_mode(

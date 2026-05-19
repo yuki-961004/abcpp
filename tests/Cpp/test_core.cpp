@@ -1148,6 +1148,53 @@ void test_subset_limits_accepted_rows() {
     require_true(!result.region[1], "subset removes second row");
 }
 
+void test_prior_weights_scale_regression_weights() {
+    abcpp::Matrix param = make_param_matrix(30, 1);
+    abcpp::Matrix sumstat = make_sumstat_matrix(30, 1);
+
+    abcpp::AbcOptions base_options;
+    base_options.method = abcpp::method::loclinear;
+    base_options.tol = 0.5;
+    base_options.hcorr = false;
+    base_options.kernel = abcpp::kernel::gaussian;
+
+    const std::vector<double> target = make_target_from_row(sumstat, 10);
+    const abcpp::AbcResult no_prior = abcpp::fit(
+        target,
+        param,
+        sumstat,
+        base_options
+    );
+
+    abcpp::AbcOptions weighted_options = base_options;
+    weighted_options.prior_weights.resize(param.rows());
+    for (std::size_t row = 0; row < param.rows(); ++row) {
+        weighted_options.prior_weights[row] = 1.0 + 0.1 * row;
+    }
+
+    const abcpp::AbcResult weighted = abcpp::fit(
+        target,
+        param,
+        sumstat,
+        weighted_options
+    );
+
+    require_true(weighted.weights.rows() == no_prior.weights.rows(),
+                 "prior weights row count");
+    for (std::size_t row = 0; row < weighted.weights.rows(); ++row) {
+        const std::size_t accepted = weighted.accepted_indices[row];
+        require_true(accepted == no_prior.accepted_indices[row],
+                     "prior weights keep accepted order");
+        require_near(
+            weighted.weights(row, 0),
+            no_prior.weights(row, 0) *
+                weighted_options.prior_weights[accepted],
+            1e-12,
+            "prior weights scale kernel weights"
+        );
+    }
+}
+
 }  // namespace
 
 int main() {
@@ -1170,6 +1217,7 @@ int main() {
         test_transforms();
         test_all_kernels_and_nonfinite_rows();
         test_subset_limits_accepted_rows();
+        test_prior_weights_scale_regression_weights();
     } catch (const std::exception& error) {
         std::cerr << error.what() << "\n";
         return 1;
